@@ -18,7 +18,7 @@ def accept(conn):
             elif name:
                 conn.setblocking(False)
                 users[name] = conn
-                broadcast(name, "${0} has connected.".format(name))
+                broadcast(name, "{0} has connected.".format(name))
                 break
     threading.Thread(target=threaded).start()
 
@@ -55,7 +55,7 @@ server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.setblocking(False)
 server.bind((HOST, PORT))
 server.listen(1)
-print("SERVER: Listening on ${0}".format(server.getsockname()))
+print("SERVER: Listening on {0}".format(server.getsockname()))
 
 users = {}
 
