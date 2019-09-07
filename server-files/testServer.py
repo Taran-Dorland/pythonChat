@@ -85,9 +85,9 @@ while True:
             if not message:
                 #
                 del users[name]
-                broadcast(name, name % " has disconnected.")
+                broadcast(name, "{0} has disconnected.".format(name))
             else:
-                broadcast(name, "%s> %s" % (name, message.strip()))
+                broadcast(name, "{0}>: {1}".format(name, message.strip()))
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         break
