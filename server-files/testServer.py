@@ -3,6 +3,8 @@ import threading
 import time
 import json
 
+from colorama import init, Fore, Back, Style
+
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
 
 def accept(conn):
@@ -15,12 +17,14 @@ def accept(conn):
                 continue
             #Check if username is already in use
             if name in users:
-                conn.send("SERVER: Name already in use.\n")
+                conn.sendall("0".encode('utf-8'))
             elif name:
                 conn.setblocking(False)
                 users[name] = conn
-                broadcast(name, "{0} has connected.".format(name))
-                conn.sendall("You have successfully connected to the server.".encode('utf-8'))
+                broadcast(name, Fore.YELLOW + "{0} has connected.".format(name) + Style.RESET_ALL)
+                
+                replyMsg = Fore.GREEN + "You have successfully connected to the server." + Style.RESET_ALL
+                conn.sendall(replyMsg.encode('utf-8'))
                 break
     threading.Thread(target=threaded).start()
 
@@ -30,7 +34,7 @@ def broadcast(name, message):
     for to_name, conn in users.items():
         if to_name != name:
             try:
-                conn.send("SERVER: ", message, "\n")
+                conn.sendall("SERVER: {0}".format(message).encode('utf-8'))
             except socket.error:
                 pass
 
@@ -71,25 +75,26 @@ while True:
                 break
 
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
-            if len(users) == MAX_CONN:
-                conn.send("SERVER: Server is full.\n")
+            if len(users) >= MAX_CONN:
+                rejectMsg = Fore.RED + "SERVER: Connection refused. Server is full." + Style.RESET_ALL
+                conn.sendall(rejectMsg.encode('utf-8'))
                 conn.close()
             else:  
                 accept(conn)
         #
-        for i in users:
+        for name, conn in users.items():
             try:
                 message = conn.recv(1024)
             except socket.error:
                 continue
             if not message:
                 #
-                name = users[i].name
-                del users[i]
-                broadcast(name, "{0} has disconnected.".format(name))
+                del users[name]
+                broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
+                break
             else:
-                name = users[i].name
                 broadcast(name, "{0}>: {1}".format(name, message.strip()))
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
+        server.close()
         break
