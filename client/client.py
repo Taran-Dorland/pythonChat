@@ -32,8 +32,10 @@ while True:
         client.sendall(username.encode('utf-8'))
 
         reply = client.recv(1024)
+        data = reply.decode('utf-8')
+        num = int(data)
 
-        if reply == False:
+        if num == 0:
             print("Name already in use.")
         else:
             break

@@ -15,7 +15,7 @@ def accept(conn):
                 continue
             #Check if username is already in use
             if name in users:
-                conn.sendall(False)
+                conn.sendall(str(0).encode('utf-8'))
             elif name:
                 conn.setblocking(False)
                 users[name] = conn
@@ -71,8 +71,8 @@ while True:
                 break
 
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
-            if len(users) == MAX_CONN:
-                conn.send("SERVER: Server is full.")
+            if len(users) >= MAX_CONN:
+                conn.sendall("SERVER: Server is full.".encode('utf-8'))
                 conn.close()
             else:  
                 accept(conn)
