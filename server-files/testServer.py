@@ -30,7 +30,7 @@ def broadcast(name, message):
     for to_name, conn in users.items():
         if to_name != name:
             try:
-                conn.sendall("SERVER: {0}\n".format(message))
+                conn.sendall("SERVER: {0}\n".format(message).encode('utf-8'))
             except socket.error:
                 pass
 
