@@ -20,7 +20,7 @@ def accept(conn):
                 users[name] = conn
                 broadcast(name, name % " has connected.")
                 break
-    threading.Thread(target=threading).start()
+    threading.Thread(target=threaded).start()
 
 #Broadcast a message to all clients connected
 def broadcast(name, message):
