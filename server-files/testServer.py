@@ -30,7 +30,7 @@ def broadcast(name, message):
     for to_name, conn in users.items():
         if to_name != name:
             try:
-                conn.send("SERVER: ", message, "\n")
+                conn.sendall("SERVER: {0}\n".format(message))
             except socket.error:
                 pass
 
@@ -77,18 +77,17 @@ while True:
             else:  
                 accept(conn)
         #
-        for i in users:
+        for name, conn in users.items():
             try:
                 message = conn.recv(1024)
             except socket.error:
                 continue
             if not message:
                 #
-                name = users[i].name
-                del users[i]
+                del users[name]
                 broadcast(name, "{0} has disconnected.".format(name))
+                break
             else:
-                name = users[i].name
                 broadcast(name, "{0}>: {1}".format(name, message.strip()))
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
