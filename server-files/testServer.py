@@ -15,7 +15,7 @@ def accept(conn):
                 continue
             #Check if username is already in use
             if name in users:
-                conn.send("SERVER: Name already in use.\n")
+                conn.sendall(False)
             elif name:
                 conn.setblocking(False)
                 users[name] = conn
@@ -30,7 +30,7 @@ def broadcast(name, message):
     for to_name, conn in users.items():
         if to_name != name:
             try:
-                conn.sendall("SERVER: {0}\n".format(message).encode('utf-8'))
+                conn.sendall("SERVER: {0}".format(message).encode('utf-8'))
             except socket.error:
                 pass
 
@@ -72,7 +72,7 @@ while True:
 
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
             if len(users) == MAX_CONN:
-                conn.send("SERVER: Server is full.\n")
+                conn.send("SERVER: Server is full.")
                 conn.close()
             else:  
                 accept(conn)
