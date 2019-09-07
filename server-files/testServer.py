@@ -41,7 +41,7 @@ serverIp.close()
 print(HOST_IP)
 
 #Load server settings from settings.json
-with open('C:\GitProjects\pythonchat\server-files\settings.json') as f:
+with open('settings.json') as f:
     json_data = json.load(f)
 
 HOST = json_data["IP"]
