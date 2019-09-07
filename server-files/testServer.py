@@ -77,16 +77,18 @@ while True:
             else:  
                 accept(conn)
         #
-        for name, conn in users.items():
+        for i in users:
             try:
                 message = conn.recv(1024)
             except socket.error:
                 continue
             if not message:
                 #
-                del users[name]
+                name = users[i].name
+                del users[i]
                 broadcast(name, "{0} has disconnected.".format(name))
             else:
+                name = users[i].name
                 broadcast(name, "{0}>: {1}".format(name, message.strip()))
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
