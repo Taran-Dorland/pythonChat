@@ -13,49 +13,81 @@ def incoming(conn):
             message = conn.recv(1024)
             print(message.decode('utf-8'))
         except socket.error:
-            print("Server connection error.")
+            print("Server connection error.\n")
             break
+
+#Outputs a list of commands that the user can exnter in the chat
+def listCommands():
+    print("List of commands: ")
+    print("/who\t:Lists current users connected to the server.")
+    print("/conn\t:Connects to the server.")
+    print("/dc\t:Disconnects from the server.")
+    print("/quit\t:Disconnects from the server and exits the program.\n")
+
+#Lets the user select a username, will reject if that username is already registered on the server
+def enterUsername(conn):
+    #First data being sent to the server is a username
+    while True:
+        try:
+            username = input("Enter a username: ")
+            conn.sendall(username.encode('utf-8'))
+
+            reply = conn.recv(1024)
+            data = reply.decode('utf-8')
+
+            if data.__eq__("0"):
+                print("Name already in use.")
+            else:
+                print(data)
+                __username = username
+                break
+
+        except socket.error:
+            print("Error connecting to server.")
+            exit()
+
+#Connects the user to the server specified by the IP and Port entered in settings.json
+def connectToServer():
+    #Establish connection to server
+    HOST = json_data["IP"]
+    PORT = json_data["PORT"]
+
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect((HOST, PORT))
+
+    enterUsername(client)
+
+    #Create a thread to listen for messages coming from the server
+    listenThread = threading.Thread(target = incoming, args = (client, ))
+    listenThread.start()
+
+    return client
 
 #Load client settings from settings.json
 with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
-#Establish connection to server
-HOST = json_data["IP"]
-PORT = json_data["PORT"]
+__username = ""
+__client = connectToServer()
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect((HOST, PORT))
-
-#First data being sent to the server is a username
-while True:
-    try:
-        username = input("Enter a username: ")
-        client.sendall(username.encode('utf-8'))
-
-        reply = client.recv(1024)
-        data = reply.decode('utf-8')
-
-        if data.__eq__("0"):
-            print("Name already in use.")
-        else:
-            print(data)
-            break
-
-    except socket.error:
-        print("Error connecting to server.")
-        exit()
-
-#Create a thread to listen for messages coming from the server
-listenThread = threading.Thread(target = incoming, args = (client, ))
-listenThread.start()
-
-#Client main features
+#Client main
 while True:
     try:
         message = input("Enter your message: ")
-        print("{0}>: {1}".format(username, message))
-        client.sendall(message.encode('utf-8'))
+
+        #Kill connection to server and terminate program
+        if message.__eq__("/quit"):
+            __client.close()
+            exit()
+        elif message.__eq__("/help"):
+            listCommands()
+        elif message.__eq__("/dc"):
+            __client.close()
+        elif message.__eq__("/conn"):
+            __client = connectToServer()
+        else:
+            print("{0}>: {1}".format(__username, message))
+            __client.sendall(message.encode('utf-8'))
 
     except (SystemExit, KeyboardInterrupt):
         break

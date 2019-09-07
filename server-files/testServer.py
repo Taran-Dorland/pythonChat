@@ -76,7 +76,8 @@ while True:
 
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
             if len(users) >= MAX_CONN:
-                conn.sendall("SERVER: Server is full.".encode('utf-8'))
+                rejectMsg = Fore.RED + "SERVER: Connection refused. Server is full." + Style.RESET_ALL
+                conn.sendall(rejectMsg.encode('utf-8'))
                 conn.close()
             else:  
                 accept(conn)
@@ -95,4 +96,5 @@ while True:
                 broadcast(name, "{0}>: {1}".format(name, message.strip()))
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
+        server.close()
         break
