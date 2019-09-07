@@ -1,7 +1,9 @@
 import socket
 import threading
-import time
 import json
+
+#https://pypi.org/project/colorama/
+from colorama import init, Fore, Back, Style
 
 #Listens for incoming data from server
 def incoming(conn):
@@ -9,7 +11,7 @@ def incoming(conn):
     while True:
         try:
             message = conn.recv(1024)
-            print(message)
+            print(message.decode('utf-8'))
         except socket.error:
             print("Server connection error.")
             break
@@ -25,6 +27,11 @@ PORT = json_data["PORT"]
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((HOST, PORT))
 
+msg1 = Fore.RED + "Test1"
+msg2 = Fore.BLUE + "Test2"
+
+print(msg1 + " " + msg2)
+
 #First data being sent to the server is a username
 while True:
     try:
@@ -33,9 +40,8 @@ while True:
 
         reply = client.recv(1024)
         data = reply.decode('utf-8')
-        num = int(data)
 
-        if num == 0:
+        if data.__eq__("0"):
             print("Name already in use.")
         else:
             break

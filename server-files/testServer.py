@@ -1,7 +1,8 @@
 import socket
 import threading
-import time
 import json
+
+from colorama import init, Fore, Back, Style
 
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
 
@@ -15,12 +16,14 @@ def accept(conn):
                 continue
             #Check if username is already in use
             if name in users:
-                conn.sendall(str(0).encode('utf-8'))
+                conn.sendall("0".encode('utf-8'))
             elif name:
                 conn.setblocking(False)
                 users[name] = conn
                 broadcast(name, "{0} has connected.".format(name))
-                conn.sendall("You have successfully connected to the server.".encode('utf-8'))
+                
+                replyMsg = Fore.GREEN + "You have successfully connected to the server."
+                conn.sendall(replyMsg.encode('utf-8'))
                 break
     threading.Thread(target=threaded).start()
 
