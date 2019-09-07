@@ -21,9 +21,9 @@ def accept(conn):
             elif name:
                 conn.setblocking(False)
                 users[name] = conn
-                broadcast(name, "{0} has connected.".format(name))
+                broadcast(name, Fore.YELLOW + "{0} has connected.".format(name) + Style.RESET_ALL)
                 
-                replyMsg = Fore.GREEN + "You have successfully connected to the server."
+                replyMsg = Fore.GREEN + "You have successfully connected to the server." + Style.RESET_ALL
                 conn.sendall(replyMsg.encode('utf-8'))
                 break
     threading.Thread(target=threaded).start()
@@ -89,7 +89,7 @@ while True:
             if not message:
                 #
                 del users[name]
-                broadcast(name, "{0} has disconnected.".format(name))
+                broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
                 break
             else:
                 broadcast(name, "{0}>: {1}".format(name, message.strip()))

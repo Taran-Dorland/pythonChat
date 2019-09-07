@@ -27,11 +27,6 @@ PORT = json_data["PORT"]
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((HOST, PORT))
 
-msg1 = Fore.RED + "Test1"
-msg2 = Fore.BLUE + "Test2"
-
-print(msg1 + " " + msg2)
-
 #First data being sent to the server is a username
 while True:
     try:
@@ -44,6 +39,7 @@ while True:
         if data.__eq__("0"):
             print("Name already in use.")
         else:
+            print(data)
             break
 
     except socket.error:
