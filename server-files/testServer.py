@@ -41,7 +41,7 @@ serverIp.close()
 print(HOST_IP)
 
 #Load server settings from settings.json
-with open('settings.json') as f:
+with open('C:\GitProjects\pythonchat\server-files\settings.json') as f:
     json_data = json.load(f)
 
 HOST = json_data["IP"]
@@ -69,7 +69,7 @@ while True:
                 break
 
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
-            if len(users) < MAX_CONN:
+            if len(users) == MAX_CONN:
                 conn.send("SERVER: Server is full.\n")
                 conn.close()
             else:  
