@@ -13,14 +13,16 @@ def accept(conn):
                 name = conn.recv(1024).strip()
             except socket.error:
                 continue
+            #Check if username is already in use
             if name in users:
                 conn.send("SERVER: Name already in use.\n")
             elif name:
                 conn.setblocking(False)
                 users[name] = conn
-                broadcast(name, name % " has connected.")
+                broadcast(name, "{0} has connected.".format(name))
+                conn.sendall("You have successfully connected to the server.".encode('utf-8'))
                 break
-    threading.Thread(target=threading).start()
+    threading.Thread(target=threaded).start()
 
 #Broadcast a message to all clients connected
 def broadcast(name, message):
@@ -28,7 +30,7 @@ def broadcast(name, message):
     for to_name, conn in users.items():
         if to_name != name:
             try:
-                conn.send("SERVER:" % message, "\n")
+                conn.send("SERVER: ", message, "\n")
             except socket.error:
                 pass
 
@@ -55,7 +57,7 @@ server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.setblocking(False)
 server.bind((HOST, PORT))
 server.listen(1)
-print("SERVER: Listening on %s" % ("%s:%s" % server.getsockname()))
+print("SERVER: Listening on {0}".format(server.getsockname()))
 
 users = {}
 
@@ -69,23 +71,25 @@ while True:
                 break
 
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
-            if len(users) < MAX_CONN:
+            if len(users) == MAX_CONN:
                 conn.send("SERVER: Server is full.\n")
                 conn.close()
             else:  
                 accept(conn)
         #
-        for name, conn in users.items():
+        for i in users:
             try:
                 message = conn.recv(1024)
             except socket.error:
                 continue
             if not message:
                 #
-                del users[name]
-                broadcast(name, name % " has disconnected.")
+                name = users[i].name
+                del users[i]
+                broadcast(name, "{0} has disconnected.".format(name))
             else:
-                broadcast(name, "%s> %s" % (name, message.strip()))
+                name = users[i].name
+                broadcast(name, "{0}>: {1}".format(name, message.strip()))
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         break
