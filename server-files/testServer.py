@@ -13,12 +13,14 @@ def accept(conn):
                 name = conn.recv(1024).strip()
             except socket.error:
                 continue
+            #Check if username is already in use
             if name in users:
                 conn.send("SERVER: Name already in use.\n")
             elif name:
                 conn.setblocking(False)
                 users[name] = conn
                 broadcast(name, "{0} has connected.".format(name))
+                conn.sendall("You have successfully connected to the server.".encode('utf-8'))
                 break
     threading.Thread(target=threaded).start()
 

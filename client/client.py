@@ -13,6 +13,17 @@ PORT = json_data["PORT"]
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((HOST, PORT))
 
+try:
+    username = input("Enter a username: ")
+    client.sendall(username.encode('utf-8'))
+
+    reply = client.recv(1024)
+    print(reply)
+
+except socket.error:
+    print("Error connecting to server.")
+    exit()
+
 while True:
     try:
         message = input("Enter your message: ")
