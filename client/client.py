@@ -17,7 +17,7 @@ while True:
     try:
         message = input("Enter your message: ")
         print(message)
-        client.send(message)
+        client.sendall(message.encode('utf-8'))
 
         reply = client.recv(1024)
         print(reply)
