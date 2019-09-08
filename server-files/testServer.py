@@ -150,7 +150,7 @@ while True:
                 if message[:4].__eq__("join"):
                     swapChannel(name, message)
                 else:
-                    broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message, usersChan[name]))
+                    broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         __server.close()
