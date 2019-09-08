@@ -77,6 +77,8 @@ def swapChannel(name, message):
         broadcastChannel(name, Fore.WHITE + Style.DIM + joinMsg + Style.RESET_ALL, usersChan[name])
     else:
         print(Fore.RED + "Unable to swap {0}'s channel; channel does not exist.".format(name) + Style.RESET_ALL)
+        #Error 155: UNABLE TO SWAP CHANNELS
+        users[name].sendall("155".encode('utf-8'))
         users[name].sendall(Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL.encode('utf-8'))
 
 #Setup the server to the specified IP and Port in settings.json
@@ -146,7 +148,7 @@ while True:
                 if message[:4].__eq__("join"):
                     swapChannel(name, message)
                 else:
-                    broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message.decode('utf-8')), usersChan[name])
+                    broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message, usersChan[name])
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         __server.close()

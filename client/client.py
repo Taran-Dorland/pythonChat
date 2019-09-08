@@ -98,6 +98,12 @@ def switchChannel(message):
     channel = "join" + message[6:]
     __client.sendall(channel.encode('utf-8'))
 
+    reply = __client.recv(1024).decode('utf-8')
+    if reply.__eq__("155"):
+        __curChannel = __curChannel
+    else:
+        __curChannel = channel[4:]
+
 #Load client settings from settings.json
 with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
