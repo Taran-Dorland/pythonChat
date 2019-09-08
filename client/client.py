@@ -25,7 +25,7 @@ def incoming(conn):
                 print(message)
 
         except socket.error:
-            print("Server connection error.\n")
+            print("Server connection lost.")
             break
 
 #Outputs a list of commands that the user can enter in the chat
@@ -52,14 +52,14 @@ def enterUsername(conn):
             data = reply.decode('utf-8')
 
             if data.__eq__("0"):
-                print("Name already in use.")
+                print(Fore.RED + "Name already in use." + Style.RESET_ALL)
             else:
                 print(data)
                 channel = conn.recv(1024).decode('utf-8')
                 return username, channel
 
         except socket.error:
-            print("Error connecting to server.")
+            print("Server connection lost.")
             exit()
 
 #For auto-login
@@ -72,14 +72,15 @@ def autoUsername(conn, username):
             data = reply.decode('utf-8')
 
             if data.__eq__("0"):
-                print("Name already in use.")
+                print(Fore.RED + "Name already in use. Disconnecting..." + Style.RESET_ALL)
+                conn.close()
             else:
                 print(data)
                 channel = conn.recv(1024).decode('utf-8')
                 return username, channel
 
         except socket.error:
-            print("Error connecting to server.")
+            print("Server connection lost.")
             exit()
 
 #Connects the user to the server specified by the IP and Port entered in settings.json
