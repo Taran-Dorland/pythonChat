@@ -31,11 +31,11 @@ def incoming(conn):
 #Outputs a list of commands that the user can exnter in the chat
 def listCommands():
     print("List of commands: ")
+    print("/w 'user'\t:Send a private message to another user.")
     print("/who\t\t:Lists current users connected to the server.")
-    print("/whochan\t:List currently connected users in current channel.")
+    print("/whochan\t:Lists current users in your channel.")
     print("/channels\t:Returns a list of channels on the server.")
-    print("/join 'channel'\t:User joins the specified channel.")
-    print("/part 'channel'\t:User parts the specified channel.")
+    print("/join 'channel'\t:User joins the specified channel. User can only be in one channel at a time.")
     print("/conn\t\t:Connects to the server.")
     print("/dc\t\t:Disconnects from the server.")
     print("/quit\t\t:Disconnects from the server and exits the program.\n")

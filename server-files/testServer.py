@@ -9,6 +9,7 @@ from colorama import init, Fore, Back, Style
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
 #Also updated from Python2 to Python3
 
+#Accepts a connection from the client, runs through setup
 def accept(conn):
 
     def threaded():
