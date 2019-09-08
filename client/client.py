@@ -49,13 +49,13 @@ def enterUsername(conn):
             conn.sendall(username.encode('utf-8'))
 
             reply = conn.recv(1024)
-            channel = conn.recv(1024).decode('utf-8')
             data = reply.decode('utf-8')
 
             if data.__eq__("0"):
                 print("Name already in use.")
             else:
                 print(data)
+                channel = conn.recv(1024).decode('utf-8')
                 return username, channel
 
         except socket.error:
