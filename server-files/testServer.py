@@ -77,7 +77,8 @@ def swapChannel(name, message):
         usersChan[name] = joinChannel
 
         broadcastChannel(name, Fore.WHITE + Style.DIM + joinMsg + Style.RESET_ALL, usersChan[name])
-        users[name].sendall(Fore.GREEN + "You have successfully joined {0}.".format(usersChan[name]) + Style.RESET_ALL.encode('utf-8'))
+        replyMsg = Fore.GREEN + "You have successfully joined {0}.".format(usersChan[name]) + Style.RESET_ALL
+        users[name].sendall(replyMsg.encode('utf-8'))
     else:
         print(Fore.RED + "Unable to swap {0}'s channel; channel does not exist.".format(name) + Style.RESET_ALL)
         #Error 155: UNABLE TO SWAP CHANNELS
