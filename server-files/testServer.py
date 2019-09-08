@@ -83,7 +83,8 @@ def swapChannel(name, message):
         print(Fore.RED + "Unable to swap {0}'s channel; channel does not exist.".format(name) + Style.RESET_ALL)
         #Error 155: UNABLE TO SWAP CHANNELS
         users[name].sendall("155".encode('utf-8'))
-        users[name].sendall(Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL.encode('utf-8'))
+        replyMsg = Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL
+        users[name].sendall(replyMsg.encode('utf-8'))
 
 #Setup the server to the specified IP and Port in settings.json
 def initializeServer():
