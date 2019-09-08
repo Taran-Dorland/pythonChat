@@ -30,7 +30,8 @@ def incoming(conn):
 def listCommands():
     print("List of commands: ")
     print("/who\t\t:Lists current users connected to the server.")
-    print('/channels\t:Returns a list of channels on the server.')
+    print("/whochan\t\t:List currently connected users in current channel.")
+    print("/channels\t:Returns a list of channels on the server.")
     print("/join 'channel'\t:User joins the specified channel.")
     print("/part 'channel'\t:User parts the specified channel.")
     print("/conn\t\t:Connects to the server.")
@@ -136,6 +137,8 @@ while True:
         elif message[:5].__eq__("/join"):
             __prevChannel = __curChannel
             __curChannel = switchChannel(message)
+        elif message.__eq__("/channels"):
+            __client.sendall("chan".encode('utf-8'))
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
             __client.sendall(message.encode('utf-8'))

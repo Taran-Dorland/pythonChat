@@ -147,8 +147,13 @@ while True:
                 broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
                 break
             else:
+                #Let the user request to join a specific channel
                 if message[:4].__eq__("join"):
                     swapChannel(name, message)
+                #Return a list of channels to the user
+                elif message.__eq__("chan"):
+                    reply = " ".join(str(e) for e in channels)
+                    conn.sendall(reply.encode('utf-8'))
                 else:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
         time.sleep(.1)
