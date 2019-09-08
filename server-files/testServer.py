@@ -21,9 +21,12 @@ def accept(conn):
                 conn.sendall("0".encode('utf-8'))
             elif name:
                 conn.setblocking(False)
-                users[name][0] = conn
-                users[name][1] = "general"
-                broadcast(name, Fore.YELLOW + "{0} has connected to channel {1}".format(name, users[name][1]) + Style.RESET_ALL)
+
+                #Save the connection and name in a dictionary as well as the channel the user is in
+                users[name] = conn
+                usersChan[name] = channels[0]
+                broadcast(name, Fore.YELLOW + "{0} has connected to the server.".format(name) + Style.RESET_ALL)
+                broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0])
                 
                 replyMsg = Fore.GREEN + "You have successfully connected to the server." + Style.RESET_ALL
                 conn.sendall(replyMsg.encode('utf-8'))
@@ -42,7 +45,16 @@ def broadcast(name, message):
 
 #Broadcasts a message to a specific channel
 def broadcastChannel(name, message, channel):
+
     print(message)
+
+    for user_name, curr_channel in usersChan.items():
+        if channel.__eq__(curr_channel):
+            if user_name != name:
+                try:
+                    users[user_name].sendall(message.encode('utf-8'))
+                except socket.error:
+                    pass
 
 #Setup the server to the specified IP and Port in settings.json
 def initializeServer():
@@ -76,6 +88,7 @@ with open('settings.json') as f:
 __server, __MAX_CONN = initializeServer()
 
 users = {}
+usersChan = {}
 channels = json_data["channels"]
 
 while True:
@@ -103,10 +116,12 @@ while True:
             if not message:
                 #
                 del users[name]
+                del usersChan[name]
                 broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
                 break
             else:
-                broadcast(name, "{0}>: {1}".format(name, message.decode('utf-8')))
+                #broadcast(name, "{0}>: {1}".format(name, message.decode('utf-8')))
+                broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message.decode('utf-8')), usersChan[name])
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         __server.close()
