@@ -153,8 +153,9 @@ while True:
                     swapChannel(name, message)
                 #Return a list of channels to the user
                 elif message.__eq__("chan"):
-                    reply = " ".join(str(e) for e in channels)
-                    conn.sendall("Channels: " + reply.encode('utf-8'))
+                    reply = "Channels: "
+                    reply = reply + " ".join(str(e) for e in channels)
+                    conn.sendall(reply.encode('utf-8'))
                 else:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
         time.sleep(.1)
