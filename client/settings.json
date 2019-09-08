@@ -1,4 +1,6 @@
 {
     "IP": "192.168.100.130",
-    "PORT": 4004
+    "PORT": 4004,
+    "auto-connect": false,
+    "username": "the_best"
 }
