@@ -3,11 +3,13 @@ import threading
 import time
 import json
 
+#https://pypi.org/project/colorama/
 from colorama import init, Fore, Back, Style
 
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
 #Also updated from Python2 to Python3
 
+#Accepts a connection from the client, runs through setup
 def accept(conn):
 
     def threaded():
@@ -77,11 +79,14 @@ def swapChannel(name, message):
         usersChan[name] = joinChannel
 
         broadcastChannel(name, Fore.WHITE + Style.DIM + joinMsg + Style.RESET_ALL, usersChan[name])
+        replyMsg = Fore.GREEN + "You have successfully joined {0}.".format(usersChan[name]) + Style.RESET_ALL
+        users[name].sendall(replyMsg.encode('utf-8'))
     else:
-        print(Fore.RED + "Unable to swap {0}'s channel; channel does not exist.".format(name) + Style.RESET_ALL)
+        print(Fore.RED + "Unable to swap {0}'s channel; channel '{1}' does not exist.".format(name, joinChannel) + Style.RESET_ALL)
         #Error 155: UNABLE TO SWAP CHANNELS
         users[name].sendall("155".encode('utf-8'))
-        users[name].sendall(Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL.encode('utf-8'))
+        replyMsg = Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL
+        users[name].sendall(replyMsg.encode('utf-8'))
 
 #Setup the server to the specified IP and Port in settings.json
 def initializeServer():
@@ -99,6 +104,10 @@ def initializeServer():
     print("SERVER: Listening on {0}".format(server.getsockname()))
 
     return server, MAX_CONN
+
+#Prints information to server terminal
+def informServer(name, command):
+    print(Fore.CYAN + Style.BRIGHT + "{0} issued command '{1}' on server.".format(name, command) + Style.RESET_ALL)
 
 #Get host machine IP
 #Best way would be to set static IP and change server settings in settings.json
@@ -147,8 +156,32 @@ while True:
                 broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
                 break
             else:
+                #Let the user request to join a specific channel
                 if message[:4].__eq__("join"):
+                    informServer(name, "join")
                     swapChannel(name, message)
+                #Return a list of channels to the user
+                elif message.__eq__("chan"):
+                    informServer(name, "channels")
+                    reply = "Channels: "
+                    reply = reply + " ".join(str(e) for e in channels)
+                    conn.sendall(reply.encode('utf-8'))
+                #Return a string of users in a specified channel
+                elif message[:8].__eq__("whochan_"):
+                    informServer(name, "whochan")
+                    chanToComp = message[8:]
+                    names = ""
+                    for _name, _chan in usersChan.items():
+                        if chanToComp.__eq__(_chan):
+                            names = names +  _name + ", "
+                    conn.sendall(names.encode('utf-8'))
+                #Return a string of users who are connected to the server
+                elif message.__eq__("who"):
+                    informServer(name, "who")
+                    names = ""
+                    for _name, _conn in users.items():
+                        names = names +  _name + ", "
+                    conn.sendall(names.encode('utf-8'))
                 else:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
         time.sleep(.1)

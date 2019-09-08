@@ -9,6 +9,8 @@ from colorama import init, Fore, Back, Style
 #Listens for incoming data from server
 def incoming(conn):
 
+    global __curChannel, __prevChannel
+
     while True:
         try:
             message = conn.recv(1024).decode('utf-8')
@@ -29,10 +31,11 @@ def incoming(conn):
 #Outputs a list of commands that the user can exnter in the chat
 def listCommands():
     print("List of commands: ")
+    print("/w 'user'\t:Send a private message to another user.")
     print("/who\t\t:Lists current users connected to the server.")
-    print('/channels\t:Returns a list of channels on the server.')
-    print("/join 'channel'\t:User joins the specified channel.")
-    print("/part 'channel'\t:User parts the specified channel.")
+    print("/whochan\t:Lists current users in your channel.")
+    print("/channels\t:Returns a list of channels on the server.")
+    print("/join 'channel'\t:User joins the specified channel. User can only be in one channel at a time.")
     print("/conn\t\t:Connects to the server.")
     print("/dc\t\t:Disconnects from the server.")
     print("/quit\t\t:Disconnects from the server and exits the program.\n")
@@ -46,13 +49,13 @@ def enterUsername(conn):
             conn.sendall(username.encode('utf-8'))
 
             reply = conn.recv(1024)
+            channel = conn.recv(1024).decode('utf-8')
             data = reply.decode('utf-8')
 
             if data.__eq__("0"):
                 print("Name already in use.")
             else:
                 print(data)
-                channel = conn.recv(1024).decode('utf-8')
                 return username, channel
 
         except socket.error:
@@ -113,6 +116,7 @@ def switchChannel(message):
 with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
+global __curChannel, __prevChannel
 __client, __username, __curChannel = connectToServer()
 __prevChannel = __curChannel
 
@@ -128,14 +132,30 @@ while True:
             __client.close()
             exit()
         elif message.__eq__("/help"):
+            print(message)
             listCommands()
         elif message.__eq__("/dc"):
+            print(message)
             __client.close()
         elif message.__eq__("/conn"):
+            print(message)
             __client = connectToServer()
         elif message[:5].__eq__("/join"):
+            print(message)
             __prevChannel = __curChannel
             __curChannel = switchChannel(message)
+            time.sleep(.25)
+        elif message.__eq__("/channels"):
+            print(message)
+            __client.sendall("chan".encode('utf-8'))
+            time.sleep(.25)
+        elif message.__eq__("/whochan"):
+            command = "whochan_" + __curChannel
+            __client.sendall(command.encode('utf-8'))
+            time.sleep(.25)
+        elif message.__eq__("/who"):
+            __client.sendall("who".encode('utf-8'))
+            time.sleep(.25)
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
             __client.sendall(message.encode('utf-8'))
