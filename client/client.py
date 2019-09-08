@@ -1,5 +1,6 @@
 import socket
 import threading
+import time
 import json
 
 #https://pypi.org/project/colorama/
@@ -39,8 +40,26 @@ def enterUsername(conn):
                 print("Name already in use.")
             else:
                 print(data)
-                __username = username
-                break
+                return username
+
+        except socket.error:
+            print("Error connecting to server.")
+            exit()
+
+#For auto-login
+def autoUsername(conn, username):
+    while True:
+        try:
+            conn.sendall(username.encode('utf-8'))
+
+            reply = conn.recv(1024)
+            data = reply.decode('utf-8')
+
+            if data.__eq__("0"):
+                print("Name already in use.")
+            else:
+                print(data)
+                return username
 
         except socket.error:
             print("Error connecting to server.")
@@ -55,20 +74,25 @@ def connectToServer():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((HOST, PORT))
 
-    enterUsername(client)
+    #Check auto-connect settings in settings.json
+    auto_Connect = json_data["auto-connect"]
+
+    if auto_Connect == False:
+        username = enterUsername(client)
+    else:
+        username = autoUsername(client, json_data["username"])
 
     #Create a thread to listen for messages coming from the server
     listenThread = threading.Thread(target = incoming, args = (client, ))
     listenThread.start()
 
-    return client
+    return client, username
 
 #Load client settings from settings.json
 with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
-__username = ""
-__client = connectToServer()
+__client, __username = connectToServer()
 
 #Client main
 while True:

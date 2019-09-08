@@ -6,6 +6,7 @@ import json
 from colorama import init, Fore, Back, Style
 
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
+#Also updated from Python2 to Python3
 
 def accept(conn):
 
@@ -30,7 +31,7 @@ def accept(conn):
 
 #Broadcast a message to all clients connected
 def broadcast(name, message):
-    print(message)
+    print(message.decode('utf-8'))
     for to_name, conn in users.items():
         if to_name != name:
             try:
