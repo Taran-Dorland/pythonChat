@@ -3,6 +3,7 @@ import threading
 import time
 import json
 
+#https://pypi.org/project/colorama/
 from colorama import init, Fore, Back, Style
 
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
@@ -103,6 +104,10 @@ def initializeServer():
 
     return server, MAX_CONN
 
+#Prints information to server terminal
+def informServer(name, command):
+    print(Fore.CYAN + Style.BRIGHT + "{0} issued command '{1}' on server.".format(name, command) + Style.RESET_ALL)
+
 #Get host machine IP
 #Best way would be to set static IP and change server settings in settings.json
 serverIp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -152,14 +157,17 @@ while True:
             else:
                 #Let the user request to join a specific channel
                 if message[:4].__eq__("join"):
+                    informServer(name, "join")
                     swapChannel(name, message)
                 #Return a list of channels to the user
                 elif message.__eq__("chan"):
+                    informServer(name, "channels")
                     reply = "Channels: "
                     reply = reply + " ".join(str(e) for e in channels)
                     conn.sendall(reply.encode('utf-8'))
                 #Return a string of users in a specified channel
-                elif message.__eq__("whochan_"):
+                elif message[:8].__eq__("whochan_"):
+                    informServer(name, "whochan")
                     chanToComp = message[8:]
                     names = ""
                     for _name, _chan in usersChan.items():
@@ -168,6 +176,7 @@ while True:
                     conn.sendall(names.encode('utf-8'))
                 #Return a string of users who are connected to the server
                 elif message.__eq__("who"):
+                    informServer(name, "who")
                     names = ""
                     for _name, _conn in users.items():
                         names = names +  _name + ", "
