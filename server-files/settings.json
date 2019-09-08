@@ -2,8 +2,5 @@
     "IP": "127.0.0.1",
     "PORT": 4004,
     "MAX_CONNECTIONS": 5,
-    "channels": {
-        0: "general",
-        1: "secret"
-    }
+    "channels": ["general", "secret"]
 }
