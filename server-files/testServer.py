@@ -42,7 +42,8 @@ def broadcast(name, message):
     for to_name, conn in users.items():
         if to_name != name:
             try:
-                conn.sendall("SERVER: {0}".format(message).encode('utf-8'))
+                announce = Style.BRIGHT + Fore.RED + "SE" + Fore.BLUE + "RV" + Fore.MAGENTA + "ER" + Style.RESET_ALL
+                conn.sendall("{0}: {1}".format(announce, message).encode('utf-8'))
             except socket.error:
                 pass
 
@@ -170,17 +171,19 @@ while True:
                 elif message[:8].__eq__("whochan_"):
                     informServer(name, "whochan")
                     chanToComp = message[8:]
-                    names = ""
+                    names = Style.BRIGHT + Fore.BLACK + Back.WHITE
                     for _name, _chan in usersChan.items():
                         if chanToComp.__eq__(_chan):
                             names = names +  _name + ", "
+                    names = names + Style.RESET_ALL
                     conn.sendall(names.encode('utf-8'))
                 #Return a string of users who are connected to the server
                 elif message.__eq__("who"):
                     informServer(name, "who")
-                    names = ""
+                    names = Style.BRIGHT + Fore.BLACK + Back.WHITE
                     for _name, _conn in users.items():
                         names = names +  _name + ", "
+                    names = names + Style.RESET_ALL
                     conn.sendall(names.encode('utf-8'))
                 else:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])

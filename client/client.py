@@ -28,7 +28,7 @@ def incoming(conn):
             print("Server connection error.\n")
             break
 
-#Outputs a list of commands that the user can exnter in the chat
+#Outputs a list of commands that the user can enter in the chat
 def listCommands():
     print("List of commands: ")
     print("/w 'user'\t:Send a private message to another user.")
