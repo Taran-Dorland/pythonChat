@@ -129,16 +129,23 @@ while True:
             __client.close()
             exit()
         elif message.__eq__("/help"):
+            print(message)
             listCommands()
         elif message.__eq__("/dc"):
+            print(message)
             __client.close()
         elif message.__eq__("/conn"):
+            print(message)
             __client = connectToServer()
         elif message[:5].__eq__("/join"):
+            print(message)
             __prevChannel = __curChannel
             __curChannel = switchChannel(message)
+            time.sleep(.25)
         elif message.__eq__("/channels"):
+            print(message)
             __client.sendall("chan".encode('utf-8'))
+            time.sleep(.25)
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
             __client.sendall(message.encode('utf-8'))

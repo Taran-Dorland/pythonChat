@@ -77,6 +77,7 @@ def swapChannel(name, message):
         usersChan[name] = joinChannel
 
         broadcastChannel(name, Fore.WHITE + Style.DIM + joinMsg + Style.RESET_ALL, usersChan[name])
+        users[name].sendall(Fore.GREEN + "You have successfully joined {0}.".format(usersChan[name]) + Style.RESET_ALL)
     else:
         print(Fore.RED + "Unable to swap {0}'s channel; channel does not exist.".format(name) + Style.RESET_ALL)
         #Error 155: UNABLE TO SWAP CHANNELS
@@ -153,7 +154,7 @@ while True:
                 #Return a list of channels to the user
                 elif message.__eq__("chan"):
                     reply = " ".join(str(e) for e in channels)
-                    conn.sendall(reply.encode('utf-8'))
+                    conn.sendall("Channels: " + reply.encode('utf-8'))
                 else:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
         time.sleep(.1)
