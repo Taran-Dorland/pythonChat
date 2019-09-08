@@ -13,7 +13,7 @@ def accept(conn):
     def threaded():
         while True:
             try:
-                name = conn.recv(1024).strip()
+                name = conn.recv(1024).decode('utf-8')
             except socket.error:
                 continue
             #Check if username is already in use
