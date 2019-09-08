@@ -25,13 +25,13 @@ def incoming(conn):
                 print(message)
 
         except socket.error:
-            print("Server connection error.\n")
+            print("Server connection lost.")
             break
 
 #Outputs a list of commands that the user can enter in the chat
 def listCommands():
     print("List of commands: ")
-    print("/w 'user'\t:Send a private message to another user.")
+    print("/w 'user' 'message'\t:Send a private message to another user.")
     print("/who\t\t:Lists current users connected to the server.")
     print("/whochan\t:Lists current users in your channel.")
     print("/channels\t:Returns a list of channels on the server.")
@@ -49,17 +49,17 @@ def enterUsername(conn):
             conn.sendall(username.encode('utf-8'))
 
             reply = conn.recv(1024)
-            channel = conn.recv(1024).decode('utf-8')
             data = reply.decode('utf-8')
 
             if data.__eq__("0"):
-                print("Name already in use.")
+                print(Fore.RED + "Name already in use." + Style.RESET_ALL)
             else:
                 print(data)
+                channel = conn.recv(1024).decode('utf-8')
                 return username, channel
 
         except socket.error:
-            print("Error connecting to server.")
+            print("Server connection lost.")
             exit()
 
 #For auto-login
@@ -72,14 +72,15 @@ def autoUsername(conn, username):
             data = reply.decode('utf-8')
 
             if data.__eq__("0"):
-                print("Name already in use.")
+                print(Fore.RED + "Name already in use. Disconnecting..." + Style.RESET_ALL)
+                conn.close()
             else:
                 print(data)
                 channel = conn.recv(1024).decode('utf-8')
                 return username, channel
 
         except socket.error:
-            print("Error connecting to server.")
+            print("Server connection lost.")
             exit()
 
 #Connects the user to the server specified by the IP and Port entered in settings.json
@@ -155,6 +156,11 @@ while True:
             time.sleep(.25)
         elif message.__eq__("/who"):
             __client.sendall("who".encode('utf-8'))
+            time.sleep(.25)
+        elif message[:2].__eq__("/w"):
+            cmdMsg = message.split(' ')
+            command = "w_" + cmdMsg[1] + "_" + cmdMsg[2]
+            __client.sendall(command.encode('utf-8'))
             time.sleep(.25)
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
