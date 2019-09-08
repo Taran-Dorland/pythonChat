@@ -159,18 +159,18 @@ while True:
                     reply = reply + " ".join(str(e) for e in channels)
                     conn.sendall(reply.encode('utf-8'))
                 #Return a string of users in a specified channel
-                elif message.__eq__("whochan"):
+                elif message.__eq__("whochan_"):
                     chanToComp = message[8:]
                     names = ""
                     for _name, _chan in usersChan.items():
                         if chanToComp.__eq__(_chan):
-                            names = names + ", " + _name
+                            names = names +  _name + ", "
                     conn.sendall(names.encode('utf-8'))
                 #Return a string of users who are connected to the server
                 elif message.__eq__("who"):
                     names = ""
                     for _name, _conn in users.items():
-                        names = names + ", " + _name
+                        names = names +  _name + ", "
                     conn.sendall(names.encode('utf-8'))
                 else:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
