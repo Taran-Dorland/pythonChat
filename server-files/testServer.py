@@ -80,7 +80,7 @@ def swapChannel(name, message):
         replyMsg = Fore.GREEN + "You have successfully joined {0}.".format(usersChan[name]) + Style.RESET_ALL
         users[name].sendall(replyMsg.encode('utf-8'))
     else:
-        print(Fore.RED + "Unable to swap {0}'s channel; channel does not exist.".format(name) + Style.RESET_ALL)
+        print(Fore.RED + "Unable to swap {0}'s channel; channel '{1}' does not exist.".format(name, joinChannel) + Style.RESET_ALL)
         #Error 155: UNABLE TO SWAP CHANNELS
         users[name].sendall("155".encode('utf-8'))
         replyMsg = Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL
@@ -158,6 +158,20 @@ while True:
                     reply = "Channels: "
                     reply = reply + " ".join(str(e) for e in channels)
                     conn.sendall(reply.encode('utf-8'))
+                #Return a string of users in a specified channel
+                elif message.__eq__("whochan"):
+                    chanToComp = message[8:]
+                    names = ""
+                    for _name, _chan in usersChan.items():
+                        if chanToComp.__eq__(_chan):
+                            names = names + ", " + _name
+                    conn.sendall(names.encode('utf-8'))
+                #Return a string of users who are connected to the server
+                elif message.__eq__("who"):
+                    names = ""
+                    for _name, _conn in users.items():
+                        names = names + ", " + _name
+                    conn.sendall(names.encode('utf-8'))
                 else:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
         time.sleep(.1)
