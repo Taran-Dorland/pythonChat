@@ -20,10 +20,13 @@ def incoming(conn):
 #Outputs a list of commands that the user can exnter in the chat
 def listCommands():
     print("List of commands: ")
-    print("/who\t:Lists current users connected to the server.")
-    print("/conn\t:Connects to the server.")
-    print("/dc\t:Disconnects from the server.")
-    print("/quit\t:Disconnects from the server and exits the program.\n")
+    print("/who\t\t:Lists current users connected to the server.")
+    print('/channels\t:Returns a list of channels on the server.')
+    print("/join 'channel'\t:User joins the specified channel.")
+    print("/part 'channel'\t:User parts the specified channel.")
+    print("/conn\t\t:Connects to the server.")
+    print("/dc\t\t:Disconnects from the server.")
+    print("/quit\t\t:Disconnects from the server and exits the program.\n")
 
 #Lets the user select a username, will reject if that username is already registered on the server
 def enterUsername(conn):
@@ -97,7 +100,9 @@ __client, __username = connectToServer()
 #Client main
 while True:
     try:
+        #https://stackoverflow.com/questions/10829650/delete-the-last-input-row-in-python
         message = input("Enter your message: ")
+        print("\033[A                             \033[A")
 
         #Kill connection to server and terminate program
         if message.__eq__("/quit"):
