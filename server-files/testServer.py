@@ -60,6 +60,18 @@ def broadcastChannel(name, message, channel):
                 except socket.error:
                     pass
 
+#Broadcast a message to a specified used from another user (Private message)
+def boradcastPrivateMsg(name, to_name, message):
+    msg = Fore.MAGENTA + "{0}@{1}=> {2}".format(name, to_name, message) + Style.RESET_ALL
+    print(msg)
+
+    for at, conn in users.items():
+        if at == to_name:
+            try:
+                conn.sendall(msg.encode('utf-8'))
+            except socket.error:
+                pass
+
 #Swaps a user's channel
 def swapChannel(name, message):
     joinChannel = message[4:]
@@ -185,6 +197,10 @@ while True:
                         names = names +  _name + ", "
                     names = names + Style.RESET_ALL
                     conn.sendall(names.encode('utf-8'))
+                elif message[:2].__eq__("w_"):
+                    informServer(name, "whisper")
+                    cmdMsg = message.split('_')
+                    boradcastPrivateMsg(name, cmdMsg[1], cmdMsg[2])
                 else:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
         time.sleep(.1)

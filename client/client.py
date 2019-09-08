@@ -31,7 +31,7 @@ def incoming(conn):
 #Outputs a list of commands that the user can enter in the chat
 def listCommands():
     print("List of commands: ")
-    print("/w 'user'\t:Send a private message to another user.")
+    print("/w 'user' 'message'\t:Send a private message to another user.")
     print("/who\t\t:Lists current users connected to the server.")
     print("/whochan\t:Lists current users in your channel.")
     print("/channels\t:Returns a list of channels on the server.")
@@ -156,6 +156,11 @@ while True:
             time.sleep(.25)
         elif message.__eq__("/who"):
             __client.sendall("who".encode('utf-8'))
+            time.sleep(.25)
+        elif message[:2].__eq__("/w"):
+            cmdMsg = message.split(' ')
+            command = "w_" + cmdMsg[1] + "_" + cmdMsg[2]
+            __client.sendall(command.encode('utf-8'))
             time.sleep(.25)
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
