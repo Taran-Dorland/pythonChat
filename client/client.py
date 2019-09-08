@@ -93,6 +93,11 @@ def connectToServer():
 
     return client, username, channel
 
+#Sends a message to the server to switch chat channel
+def switchChannel(message):
+    channel = "join" + message[6:]
+    __client.sendall(channel.encode('utf-8'))
+
 #Load client settings from settings.json
 with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
@@ -116,6 +121,8 @@ while True:
             __client.close()
         elif message.__eq__("/conn"):
             __client = connectToServer()
+        elif message[:5].__eq__("/join"):
+            switchChannel(message)
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
             __client.sendall(message.encode('utf-8'))

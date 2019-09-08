@@ -57,6 +57,28 @@ def broadcastChannel(name, message, channel):
                 except socket.error:
                     pass
 
+#Swaps a user's channel
+def swapChannel(name, message):
+    joinChannel = message[4:]
+    channelExists = False
+
+    #Check to see if the channel the user wants to join actually exists
+    for channel in channels:
+        if joinChannel.__eq__(channel):
+            channelExists = True
+    
+    if channelExists == True:
+        partMsg = "{0} has left the channel.".format(name)
+        joinMsg = "{0} has joined the channel.".format(name)
+
+        broadcastChannel(name, Fore.WHITE + Style.DIM + partMsg + Style.RESET_ALL, usersChan[name])
+        usersChan[name] = joinChannel
+
+        broadcastChannel(name, Fore.WHITE + Style.DIM + joinMsg + Style.RESET_ALL, usersChan[name])
+    else:
+        print(Fore.RED + "Unable to swap {0}'s channel; channel does not exist.".format(name) + Style.RESET_ALL)
+        users[name].sendall(Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL.encode('utf-8'))
+
 #Setup the server to the specified IP and Port in settings.json
 def initializeServer():
     HOST = json_data["IP"]
@@ -111,7 +133,7 @@ while True:
         #
         for name, conn in users.items():
             try:
-                message = conn.recv(1024)
+                message = conn.recv(1024).decode('utf-8')
             except socket.error:
                 continue
             if not message:
@@ -121,8 +143,10 @@ while True:
                 broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
                 break
             else:
-                #broadcast(name, "{0}>: {1}".format(name, message.decode('utf-8')))
-                broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message.decode('utf-8')), usersChan[name])
+                if message[:4].__eq__("join"):
+                    swapChannel(name, message)
+                else:
+                    broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message.decode('utf-8')), usersChan[name])
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         __server.close()
