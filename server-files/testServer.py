@@ -30,6 +30,7 @@ def accept(conn):
                 
                 replyMsg = Fore.GREEN + "You have successfully connected to the server." + Style.RESET_ALL
                 conn.sendall(replyMsg.encode('utf-8'))
+                conn.sendall(usersChan[name].encode('utf-8'))
                 break
     threading.Thread(target=threaded).start()
 

@@ -43,7 +43,8 @@ def enterUsername(conn):
                 print("Name already in use.")
             else:
                 print(data)
-                return username
+                channel = conn.recv(1024).decode('utf-8')
+                return username, channel
 
         except socket.error:
             print("Error connecting to server.")
@@ -62,7 +63,8 @@ def autoUsername(conn, username):
                 print("Name already in use.")
             else:
                 print(data)
-                return username
+                channel = conn.recv(1024).decode('utf-8')
+                return username, channel
 
         except socket.error:
             print("Error connecting to server.")
@@ -81,21 +83,21 @@ def connectToServer():
     auto_Connect = json_data["auto-connect"]
 
     if auto_Connect == False:
-        username = enterUsername(client)
+        username, channel = enterUsername(client)
     else:
-        username = autoUsername(client, json_data["username"])
+        username, channel = autoUsername(client, json_data["username"])
 
     #Create a thread to listen for messages coming from the server
     listenThread = threading.Thread(target = incoming, args = (client, ))
     listenThread.start()
 
-    return client, username
+    return client, username, channel
 
 #Load client settings from settings.json
 with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
-__client, __username = connectToServer()
+__client, __username, __curChannel = connectToServer()
 
 #Client main
 while True:
@@ -115,7 +117,7 @@ while True:
         elif message.__eq__("/conn"):
             __client = connectToServer()
         else:
-            print("{0}>: {1}".format(__username, message))
+            print("{0}@{1}: {2}".format(__username, __curChannel, message))
             __client.sendall(message.encode('utf-8'))
 
     except (SystemExit, KeyboardInterrupt):
