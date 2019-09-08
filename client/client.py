@@ -11,8 +11,17 @@ def incoming(conn):
 
     while True:
         try:
-            message = conn.recv(1024)
-            print(message.decode('utf-8'))
+            message = conn.recv(1024).decode('utf-8')
+
+            #Error 155: Failed to swap channel
+            #1: Success
+            if message.__eq__("155"):
+                __curChannel = __prevChannel
+            elif message.__eq__("1"):
+                time.sleep(.1)
+            else:
+                print(message)
+
         except socket.error:
             print("Server connection error.\n")
             break
@@ -98,17 +107,14 @@ def switchChannel(message):
     channel = "join" + message[6:]
     __client.sendall(channel.encode('utf-8'))
 
-    reply = __client.recv(1024).decode('utf-8')
-    if reply.__eq__("155"):
-        __curChannel = __curChannel
-    else:
-        __curChannel = channel[4:]
+    return message[6:]
 
 #Load client settings from settings.json
 with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
 __client, __username, __curChannel = connectToServer()
+__prevChannel = __curChannel
 
 #Client main
 while True:
@@ -128,7 +134,8 @@ while True:
         elif message.__eq__("/conn"):
             __client = connectToServer()
         elif message[:5].__eq__("/join"):
-            switchChannel(message)
+            __prevChannel = __curChannel
+            __curChannel = switchChannel(message)
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
             __client.sendall(message.encode('utf-8'))

@@ -47,7 +47,7 @@ def broadcast(name, message):
 #Broadcasts a message to a specific channel
 def broadcastChannel(name, message, channel):
 
-    print(message)
+    print(message + "(Channel: {0})".format(channel))
 
     for user_name, curr_channel in usersChan.items():
         if channel.__eq__(curr_channel):
