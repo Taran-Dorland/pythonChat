@@ -31,7 +31,7 @@ def accept(conn):
 
 #Broadcast a message to all clients connected
 def broadcast(name, message):
-    print(message.decode('utf-8'))
+    print(message)
     for to_name, conn in users.items():
         if to_name != name:
             try:
@@ -94,7 +94,7 @@ while True:
                 broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
                 break
             else:
-                broadcast(name, "{0}>: {1}".format(name, message.strip()))
+                broadcast(name, "{0}>: {1}".format(name, message.decode('utf-8')))
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         server.close()
