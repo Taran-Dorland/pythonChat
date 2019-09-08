@@ -71,6 +71,8 @@ def swapChannel(name, message):
         partMsg = "{0} has left the channel.".format(name)
         joinMsg = "{0} has joined the channel.".format(name)
 
+        users[name].sendall("1".encode('utf-8'))
+
         broadcastChannel(name, Fore.WHITE + Style.DIM + partMsg + Style.RESET_ALL, usersChan[name])
         usersChan[name] = joinChannel
 
