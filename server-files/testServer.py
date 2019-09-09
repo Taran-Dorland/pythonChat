@@ -197,6 +197,7 @@ while True:
                         names = names +  _name + ", "
                     names = names + Style.RESET_ALL
                     conn.sendall(names.encode('utf-8'))
+                #Command to send a message to a specific user
                 elif message[:2].__eq__("w_"):
                     informServer(name, "whisper")
                     cmdMsg = message.split('_')

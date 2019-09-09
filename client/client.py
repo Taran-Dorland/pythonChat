@@ -159,7 +159,9 @@ while True:
             time.sleep(.25)
         elif message[:2].__eq__("/w"):
             cmdMsg = message.split(' ')
-            command = "w_" + cmdMsg[1] + "_" + cmdMsg[2]
+            fixMsg = "".join(str(e + " ") for e in cmdMsg)
+            command = "w_" + cmdMsg[1] + "_" + fixMsg
+            print(Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, cmdMsg[1], fixMsg) + Style.RESET_ALL)
             __client.sendall(command.encode('utf-8'))
             time.sleep(.25)
         else:
