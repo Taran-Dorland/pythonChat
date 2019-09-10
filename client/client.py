@@ -25,8 +25,9 @@ def incoming(conn):
             elif message[:2].__eq__("10"):
                 print(message[2:])
                 user = message.split('@')
+                print(user[0])
                 __prevWhisper = user[0][2:]
-                print(__prevWhisper)
+                print("Prev w: " + __prevWhisper)
             else:
                 print(message)
 

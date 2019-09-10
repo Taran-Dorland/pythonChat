@@ -63,11 +63,11 @@ def broadcastChannel(name, message, channel):
 
 #Broadcast a message to a specified user from another user (Private message)
 def boradcastPrivateMsg(name, to_name, message):
-    msg = Fore.MAGENTA + "10{0}@{1}=> {2}".format(name, to_name, message) + Style.RESET_ALL
+    msg = "10{0}@{1}=> {2}".format(name, to_name, message)
 
     #Check if the user actually exists
     if to_name in users:
-        print(msg)
+        print(Fore.MAGENTA + msg + Style.RESET_ALL)
         try:
             users[to_name].sendall(msg.encode('utf-8'))
         except socket.error:
