@@ -67,7 +67,7 @@ def boradcastPrivateMsg(name, to_name, message):
 
     #Check if the user actually exists
     if to_name in users:
-        print(Fore.MAGENTA + msg + Style.RESET_ALL)
+        print(Fore.MAGENTA + msg[2:] + Style.RESET_ALL)
         try:
             users[to_name].sendall(msg.encode('utf-8'))
         except socket.error:
