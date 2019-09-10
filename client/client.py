@@ -23,11 +23,9 @@ def incoming(conn):
             elif message.__eq__("1"):
                 time.sleep(.1)
             elif message[:2].__eq__("10"):
-                print(message[2:])
+                print(Fore.MAGENTA + message[2:] + Style.RESET_ALL)
                 user = message.split('@')
-                print(user[0])
                 __prevWhisper = user[0][2:]
-                print("Prev w: " + __prevWhisper)
             else:
                 print(message)
 
