@@ -10,7 +10,7 @@ from colorama import init, Fore, Back, Style
 #Also updated from Python2 to Python3
 
 #Accepts a connection from the client, runs through setup
-def accept(conn):
+def accept(conn, cli_addr):
 
     def threaded():
         while True:
@@ -27,6 +27,7 @@ def accept(conn):
                 #Save the connection and name in a dictionary as well as the channel the user is in
                 users[name] = conn
                 usersChan[name] = channels[0]
+                print("{0}: {1}".format(name, cli_addr))
                 broadcast(name, Fore.YELLOW + "{0} has connected to the server.".format(name) + Style.RESET_ALL)
                 broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0])
                 
@@ -60,17 +61,24 @@ def broadcastChannel(name, message, channel):
                 except socket.error:
                     pass
 
-#Broadcast a message to a specified used from another user (Private message)
+#Broadcast a message to a specified user from another user (Private message)
 def boradcastPrivateMsg(name, to_name, message):
-    msg = Fore.MAGENTA + "{0}@{1}=> {2}".format(name, to_name, message) + Style.RESET_ALL
-    print(msg)
+    msg = "10{0}@{1}=> {2}".format(name, to_name, message)
 
-    for at, conn in users.items():
-        if at == to_name:
-            try:
-                conn.sendall(msg.encode('utf-8'))
-            except socket.error:
-                pass
+    #Check if the user actually exists
+    if to_name in users:
+        print(Fore.MAGENTA + msg + Style.RESET_ALL)
+        try:
+            users[to_name].sendall(msg.encode('utf-8'))
+        except socket.error:
+            pass
+    else:
+        print(Fore.RED + "{0} attempted to send message to {1}: Error user doesn't exist.".format(name, to_name) + Style.RESET_ALL)
+        replyMsg = Fore.RED + "Error: User {0} does not exist.".format(to_name) + Style.RESET_ALL
+        try:
+            users[name].sendall(replyMsg.encode('utf-8'))
+        except socket.error:
+            pass
 
 #Swaps a user's channel
 def swapChannel(name, message):
@@ -155,7 +163,7 @@ while True:
                 conn.sendall(rejectMsg.encode('utf-8'))
                 conn.close()
             else:  
-                accept(conn)
+                accept(conn, addr)
         #
         for name, conn in users.items():
             try:
@@ -197,6 +205,7 @@ while True:
                         names = names +  _name + ", "
                     names = names + Style.RESET_ALL
                     conn.sendall(names.encode('utf-8'))
+                #Command to send a message to a specific user
                 elif message[:2].__eq__("w_"):
                     informServer(name, "whisper")
                     cmdMsg = message.split('_')

@@ -9,7 +9,7 @@ from colorama import init, Fore, Back, Style
 #Listens for incoming data from server
 def incoming(conn):
 
-    global __curChannel, __prevChannel
+    global __curChannel, __prevChannel, __prevWhisper
 
     while True:
         try:
@@ -17,10 +17,15 @@ def incoming(conn):
 
             #Error 155: Failed to swap channel
             #1: Success
+            #10: Private message
             if message.__eq__("155"):
                 __curChannel = __prevChannel
             elif message.__eq__("1"):
                 time.sleep(.1)
+            elif message[:2].__eq__("10"):
+                print(Fore.MAGENTA + message[2:] + Style.RESET_ALL)
+                user = message.split('@')
+                __prevWhisper = user[0][2:]
             else:
                 print(message)
 
@@ -32,13 +37,14 @@ def incoming(conn):
 def listCommands():
     print("List of commands: ")
     print("/w 'user' 'message'\t:Send a private message to another user.")
-    print("/who\t\t:Lists current users connected to the server.")
-    print("/whochan\t:Lists current users in your channel.")
-    print("/channels\t:Returns a list of channels on the server.")
-    print("/join 'channel'\t:User joins the specified channel. User can only be in one channel at a time.")
-    print("/conn\t\t:Connects to the server.")
-    print("/dc\t\t:Disconnects from the server.")
-    print("/quit\t\t:Disconnects from the server and exits the program.\n")
+    print("/r 'message'\t\t:Send a private message to last user to whisper you.")
+    print("/who\t\t\t:Lists current users connected to the server.")
+    print("/whochan\t\t:Lists current users in your channel.")
+    print("/channels\t\t:Returns a list of channels on the server.")
+    print("/join 'channel'\t\t:User joins the specified channel. User can only be in one channel at a time.")
+    print("/conn\t\t\t:Connects to the server.")
+    print("/dc\t\t\t:Disconnects from the server.")
+    print("/quit\t\t\t:Disconnects from the server and exits the program.\n")
 
 #Lets the user select a username, will reject if that username is already registered on the server
 def enterUsername(conn):
@@ -114,10 +120,10 @@ def switchChannel(message):
     return message[6:]
 
 #Load client settings from settings.json
-with open('C:\GitProjects\pythonchat\client\settings.json') as f:
+with open('D:\Git Projects\pythonChat\client\settings.json') as f:
     json_data = json.load(f)
 
-global __curChannel, __prevChannel
+global __curChannel, __prevChannel, __prevWhisper
 __client, __username, __curChannel = connectToServer()
 __prevChannel = __curChannel
 
@@ -159,7 +165,15 @@ while True:
             time.sleep(.25)
         elif message[:2].__eq__("/w"):
             cmdMsg = message.split(' ')
-            command = "w_" + cmdMsg[1] + "_" + cmdMsg[2]
+            fixMsg = "".join(str(e + " ") for e in cmdMsg)
+            #cmdMsg[1] == user to send message to
+            command = "w_" + cmdMsg[1] + "_" + fixMsg
+            print(Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, cmdMsg[1], fixMsg) + Style.RESET_ALL)
+            __client.sendall(command.encode('utf-8'))
+            time.sleep(.25)
+        elif message[:2].__eq__("/r"):
+            command = "w_" + __prevWhisper + "_" + message
+            print(Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, __prevWhisper, message) + Style.RESET_ALL)
             __client.sendall(command.encode('utf-8'))
             time.sleep(.25)
         else:
