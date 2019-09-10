@@ -10,7 +10,7 @@ from colorama import init, Fore, Back, Style
 #Also updated from Python2 to Python3
 
 #Accepts a connection from the client, runs through setup
-def accept(conn):
+def accept(conn, cli_addr):
 
     def threaded():
         while True:
@@ -27,7 +27,7 @@ def accept(conn):
                 #Save the connection and name in a dictionary as well as the channel the user is in
                 users[name] = conn
                 usersChan[name] = channels[0]
-                print("{0}: ({1})".format(name, conn.getsockname()[0]))
+                print("{0}: ({1})".format(name, cli_addr))
                 broadcast(name, Fore.YELLOW + "{0} has connected to the server.".format(name) + Style.RESET_ALL)
                 broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0])
                 
@@ -156,7 +156,7 @@ while True:
                 conn.sendall(rejectMsg.encode('utf-8'))
                 conn.close()
             else:  
-                accept(conn)
+                accept(conn, addr)
         #
         for name, conn in users.items():
             try:
