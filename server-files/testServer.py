@@ -66,7 +66,7 @@ def boradcastPrivateMsg(name, to_name, message):
     msg = Fore.MAGENTA + "{0}@{1}=> {2}".format(name, to_name, message) + Style.RESET_ALL
     print(msg)
 
-    if users[to_name] in users:
+    if to_name in users:
         try:
             users[to_name].sendall(msg.encode('utf-8'))
         except socket.error:
