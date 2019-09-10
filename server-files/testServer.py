@@ -27,7 +27,7 @@ def accept(conn, cli_addr):
                 #Save the connection and name in a dictionary as well as the channel the user is in
                 users[name] = conn
                 usersChan[name] = channels[0]
-                print("{0}: ({1})".format(name, cli_addr))
+                print("{0}: {1}".format(name, cli_addr))
                 broadcast(name, Fore.YELLOW + "{0} has connected to the server.".format(name) + Style.RESET_ALL)
                 broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0])
                 
@@ -61,17 +61,23 @@ def broadcastChannel(name, message, channel):
                 except socket.error:
                     pass
 
-#Broadcast a message to a specified used from another user (Private message)
+#Broadcast a message to a specified user from another user (Private message)
 def boradcastPrivateMsg(name, to_name, message):
     msg = Fore.MAGENTA + "{0}@{1}=> {2}".format(name, to_name, message) + Style.RESET_ALL
     print(msg)
 
-    for at, conn in users.items():
-        if at == to_name:
-            try:
-                conn.sendall(msg.encode('utf-8'))
-            except socket.error:
-                pass
+    if users[to_name] is None:
+        print(Fore.RED + "{0} attempted to send message to {1}: Error user doesn't exist.".format(name, to_name))
+        replyMsg = Fore.RED + "Error: User {0} does not exist.".format(to_name) + Style.RESET_ALL
+        try:
+            users[name].sendall(replyMsg.encode('utf-8'))
+        except socket.error:
+            pass
+    else:
+        try:
+            users[to_name].sendall(msg.encode('utf-8'))
+        except socket.error:
+            pass
 
 #Swaps a user's channel
 def swapChannel(name, message):
