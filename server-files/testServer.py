@@ -27,6 +27,7 @@ def accept(conn):
                 #Save the connection and name in a dictionary as well as the channel the user is in
                 users[name] = conn
                 usersChan[name] = channels[0]
+                print("{0}: ({1})".format(name, conn.getsockname()[0]))
                 broadcast(name, Fore.YELLOW + "{0} has connected to the server.".format(name) + Style.RESET_ALL)
                 broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0])
                 

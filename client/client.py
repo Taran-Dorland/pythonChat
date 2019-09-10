@@ -114,7 +114,7 @@ def switchChannel(message):
     return message[6:]
 
 #Load client settings from settings.json
-with open('C:\GitProjects\pythonchat\client\settings.json') as f:
+with open('D:\Git Projects\pythonChat\client\settings.json') as f:
     json_data = json.load(f)
 
 global __curChannel, __prevChannel
