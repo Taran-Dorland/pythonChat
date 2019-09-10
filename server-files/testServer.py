@@ -66,16 +66,16 @@ def boradcastPrivateMsg(name, to_name, message):
     msg = Fore.MAGENTA + "{0}@{1}=> {2}".format(name, to_name, message) + Style.RESET_ALL
     print(msg)
 
-    if users[to_name] is None:
+    if users[to_name] in users:
+        try:
+            users[to_name].sendall(msg.encode('utf-8'))
+        except socket.error:
+            pass
+    else:
         print(Fore.RED + "{0} attempted to send message to {1}: Error user doesn't exist.".format(name, to_name))
         replyMsg = Fore.RED + "Error: User {0} does not exist.".format(to_name) + Style.RESET_ALL
         try:
             users[name].sendall(replyMsg.encode('utf-8'))
-        except socket.error:
-            pass
-    else:
-        try:
-            users[to_name].sendall(msg.encode('utf-8'))
         except socket.error:
             pass
 
