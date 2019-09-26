@@ -130,14 +130,6 @@ def initializeServer():
 def informServer(name, command):
     print(Fore.CYAN + Style.BRIGHT + "{0} issued command '{1}' on server.".format(name, command) + Style.RESET_ALL)
 
-#Get host machine IP
-#Best way would be to set static IP and change server settings in settings.json
-serverIp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-serverIp.connect(("8.8.8.8", 80))
-HOST_IP = serverIp.getsockname()[0]
-serverIp.close()
-print(HOST_IP)
-
 #Load server settings from settings.json
 with open('settings.json') as f:
     json_data = json.load(f)
