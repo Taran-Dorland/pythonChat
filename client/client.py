@@ -53,7 +53,7 @@ def incoming(conn):
                 print(message_data.message)
                 __prevWhisper = message_data.from_user
             #Failed to join server channel, channel does not exist
-            elif message_data.messtype == 55:
+            elif message_data.messType == 55:
                 print(message_data.message)
             #Confirmation message for changing chat channels
             elif message_data.messType == 56:

@@ -194,12 +194,16 @@ while True:
             try:
                 message = conn.recv(4096)
                 message_data = pickle.loads(message)
-                print(message_data.packNum)
-                print(message_data.vNum)
-                print(message_data.messType)
 
+                print("Incoming packNum: {0}".format(message_data.packNum))
+                print("Incoming vNum: {0}".format(message_data.vNum))
+                print("Incoming Type: {0}".format(message_data.messType))
+
+            except EOFError:
+                continue
             except socket.error:
                 continue
+            
             if not message:
                 #
                 del users[name]
