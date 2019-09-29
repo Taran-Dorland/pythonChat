@@ -88,7 +88,9 @@ def enterUsername(conn, packNum, vNum):
         try:
             username = input("Enter a username: ")
             packLogin = packIt(packNum, vNum, 25, "", username, "", username)
-            packNum = sendPackIt(packLogin, packNum)
+            packToSend = pickle.dumps(packLogin)
+            conn.sendall(packToSend)
+            packNum += 1
 
             reply = conn.recv(1024)
             reply_data = pickle.loads(reply)
@@ -109,7 +111,9 @@ def autoUsername(conn, username, packNum, vNum):
     try:
         channel = ""
         packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username)
-        packNum = sendPackIt(packAutoLogin, packNum)
+        packToSend = pickle.dumps(packAutoLogin)
+        conn.sendall(packToSend)
+        packNum += 1
 
         reply = conn.recv(1024)
         reply_data = pickle.loads(reply)
@@ -216,12 +220,16 @@ while True:
             listCommands()
         #Disconnects from the server
         elif message.__eq__("/dc"):
+            packDC = packIt(packetNum, versionNum, 99, "", __username, "", "")
+            packetNum = sendPackIt(packDC, packetNum)
             __client.close()
         #Connects to the server
         elif message.__eq__("/conn"):
             __client = connectToServer
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
+            packDC = packIt(packetNum, versionNum, 99, "", __username, "", "")
+            packetNum = sendPackIt(packDC, packetNum)
             __client.close()
             exit()
         #Send a standard message to the current channel on the server
@@ -231,4 +239,7 @@ while True:
             packetNum = sendPackIt(packMsg, packetNum)
 
     except (SystemExit, KeyboardInterrupt):
+        packDC = packIt(packetNum, versionNum, 99, "", __username, "", "")
+        packetNum = sendPackIt(packDC, packetNum)
+        __client.close()
         break

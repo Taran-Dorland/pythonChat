@@ -257,6 +257,11 @@ while True:
                     informServer(name, "whisper")
                     broadcastPrivateMsg(name, message_data.whisper, message_data.message)
                     packetNum += 1
+                #User disconnects from the server
+                elif message_data.messType == 99:
+                    del users[name]
+                    del usersChan[name]
+                    broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
 
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
