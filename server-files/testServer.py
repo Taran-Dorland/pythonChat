@@ -207,7 +207,7 @@ while True:
             except socket.error:
                 continue
 
-            if not message:
+            if not message_data.message:
                 #
                 del users[name]
                 del usersChan[name]
