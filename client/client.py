@@ -64,6 +64,9 @@ def incoming(conn):
             elif message_data.messType == 57:
                 print(message_data.message)
 
+        except EOFError:
+            print("EOF Error, Continuing..")
+            continue
         except socket.error:
             print("Server connection lost.")
             break

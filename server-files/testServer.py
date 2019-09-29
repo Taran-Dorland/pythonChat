@@ -249,7 +249,7 @@ while True:
             #Send a private message to another user
             elif message_data.messType == 15:
                 informServer(name, "whisper")
-                broadcastPrivateMsg(name, message_data.whisper, message_data.message)
+                broadcastPrivateMsg(name, message_data.to_user, message_data.message)
             #User disconnects from the server, delete their user data on the server
             elif message_data.messType == 99:
                 del users[name]
