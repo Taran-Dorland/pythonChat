@@ -87,7 +87,7 @@ def broadcastChannel(name, message, channel):
         if channel.__eq__(curr_channel):
             if user_name != name:
                 try:
-                    packMsg = packIt(packetNum, versionNum, 10, channel, "", message)
+                    packMsg = packIt(packetNum, versionNum, 10, channel, name, user_name, message)
                     sendPackIt(users[user_name], packMsg)
                 except socket.error:
                     pass
@@ -100,7 +100,7 @@ def broadcastPrivateMsg(name, to_name, message):
     if to_name in users:
         print(Fore.MAGENTA + msg + Style.RESET_ALL)
         try:
-            packPvtMsg = packIt(packetNum, versionNum, 15, "", to_name, msg)
+            packPvtMsg = packIt(packetNum, versionNum, 15, "", name, to_name, msg)
             sendPackIt(users[to_name], packPvtMsg)
         except socket.error:
             pass
