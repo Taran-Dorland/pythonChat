@@ -2,10 +2,30 @@ import socket
 import threading
 import time
 import json
+import pickle
 
 #https://pypi.org/project/colorama/
 from colorama import init, Fore, Back, Style
 
+#Custom object to store all data being sent and received
+class packIt:
+    packNum = 0
+    vNum = 0
+    messType = 0
+    channel = ""
+    from_user = ""
+    to_user = ""
+    message = ""
+
+    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message):
+        self.packNum = packNum
+        self.vNum = vNum
+        self.messType = messType
+        self.channel = channel
+        self.from_user = from_user
+        self.to_user = to_user
+        self.message = message
+        
 #Listens for incoming data from server
 def incoming(conn):
 
@@ -13,21 +33,36 @@ def incoming(conn):
 
     while True:
         try:
-            message = conn.recv(1024).decode('utf-8')
-
-            #Error 155: Failed to swap channel
-            #1: Success
-            #10: Private message
-            if message.__eq__("155"):
-                __curChannel = __prevChannel
-            elif message.__eq__("1"):
-                time.sleep(.1)
-            elif message[:2].__eq__("10"):
-                print(Fore.MAGENTA + message[2:] + Style.RESET_ALL)
-                user = message.split('@')
-                __prevWhisper = user[0][2:]
-            else:
-                print(message)
+            message = conn.recv(4096)
+            message_data = pickle.loads(message)
+            
+            #Standard message from channel
+            if message_data.messType == 10:
+                print(message_data.message)
+            #Server reply for list of channels
+            elif message_data.messType == 12:
+                print(message_data.message)
+            #Server reply for list of users in channel
+            elif message_data.messType == 13:
+                print(message_data.message)
+            #Server reply for list of users in server
+            elif message_data.messType == 14:
+                print(message_data.message)
+            #Private message from another user
+            elif message_data.messType == 15:
+                print(message_data.message)
+                __prevWhisper = message_data.from_user
+            #Failed to join server channel, channel does not exist
+            elif message_data.messType == 55:
+                print(message_data.message)
+            #Confirmation message for changing chat channels
+            elif message_data.messType == 56:
+                print(message_data.message)
+                __prevChannel = __curChannel
+                __curChannel = message_data.channel
+            #Failed to sent a private message to a user, user doesn't exist
+            elif message_data.messType == 57:
+                print(message_data.message)
 
         except socket.error:
             print("Server connection lost.")
@@ -47,50 +82,57 @@ def listCommands():
     print("/quit\t\t\t:Disconnects from the server and exits the program.\n")
 
 #Lets the user select a username, will reject if that username is already registered on the server
-def enterUsername(conn):
+def enterUsername(conn, packNum, vNum):
     #First data being sent to the server is a username
     while True:
         try:
             username = input("Enter a username: ")
-            conn.sendall(username.encode('utf-8'))
+            packLogin = packIt(packNum, vNum, 25, "", username, "", username)
+            packToSend = pickle.dumps(packLogin)
+            conn.sendall(packToSend)
+            packNum += 1
 
             reply = conn.recv(1024)
-            data = reply.decode('utf-8')
+            reply_data = pickle.loads(reply)
 
-            if data.__eq__("0"):
+            if reply_data.messType == 0:
                 print(Fore.RED + "Name already in use." + Style.RESET_ALL)
             else:
-                print(data)
-                channel = conn.recv(1024).decode('utf-8')
-                return username, channel
+                print(reply_data.message)
+                channel = reply_data.channel
+                return username, channel, packNum
 
         except socket.error:
             print("Server connection lost.")
             exit()
 
 #For auto-login
-def autoUsername(conn, username):
-    while True:
-        try:
-            conn.sendall(username.encode('utf-8'))
+def autoUsername(conn, username, packNum, vNum):
+    try:
+        channel = ""
+        packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username)
+        packToSend = pickle.dumps(packAutoLogin)
+        conn.sendall(packToSend)
+        packNum += 1
 
-            reply = conn.recv(1024)
-            data = reply.decode('utf-8')
+        reply = conn.recv(1024)
+        reply_data = pickle.loads(reply)
 
-            if data.__eq__("0"):
-                print(Fore.RED + "Name already in use. Disconnecting..." + Style.RESET_ALL)
-                conn.close()
-            else:
-                print(data)
-                channel = conn.recv(1024).decode('utf-8')
-                return username, channel
+        if reply_data.messType == 0:
+            print(Fore.RED + "Name already in use. Switching to manual..." + Style.RESET_ALL)
+            username, channel, packNum = enterUsername(conn, packNum, vNum)
+        else:
+            print(reply_data.message)
+            channel = reply_data.channel
 
-        except socket.error:
-            print("Server connection lost.")
-            exit()
+        return username, channel, packNum
+
+    except socket.error:
+        print("Server connection lost.")
+        exit()
 
 #Connects the user to the server specified by the IP and Port entered in settings.json
-def connectToServer():
+def connectToServer(packNum, vNum):
     #Establish connection to server
     HOST = json_data["IP"]
     PORT = json_data["PORT"]
@@ -102,29 +144,33 @@ def connectToServer():
     auto_Connect = json_data["auto-connect"]
 
     if auto_Connect == False:
-        username, channel = enterUsername(client)
+        username, channel, packNum = enterUsername(client, packNum, vNum)
     else:
-        username, channel = autoUsername(client, json_data["username"])
+        username, channel, packNum = autoUsername(client, json_data["username"], packNum, vNum)
 
     #Create a thread to listen for messages coming from the server
     listenThread = threading.Thread(target = incoming, args = (client, ))
     listenThread.start()
 
-    return client, username, channel
+    return client, username, channel, packNum
 
-#Sends a message to the server to switch chat channel
-def switchChannel(message):
-    channel = "join" + message[6:]
-    __client.sendall(channel.encode('utf-8'))
+#Send a packit to the server
+def sendPackIt(packIt, pNum):
+    packToSend = pickle.dumps(packIt)
+    __client.sendall(packToSend)
 
-    return message[6:]
+    return pNum + 1
 
 #Load client settings from settings.json
-with open('D:\Git Projects\pythonChat\client\settings.json') as f:
+with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
+#Packet info
+packetNum = 0
+versionNum = json_data["Version"]
+
 global __curChannel, __prevChannel, __prevWhisper
-__client, __username, __curChannel = connectToServer()
+__client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
 __prevChannel = __curChannel
 
 #Client main
@@ -134,51 +180,67 @@ while True:
         message = input("Enter your message: ")
         print("\033[A                             \033[A")
 
-        #Kill connection to server and terminate program
-        if message.__eq__("/quit"):
+        #Join a chat channel on the server
+        if message[:5].__eq__("/join"):
+            channel = message[2:]
+            packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel)
+            packetNum = sendPackIt(packJoin, packetNum)
+            time.sleep(.25)
+        #View the channels available on the server
+        elif message.__eq__("/channels"):
+            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "")
+            packetNum = sendPackIt(packChan, packetNum)
+            time.sleep(.25)
+        #View all users in your current chat channel
+        elif message.__eq__("/whochan"):
+            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "")
+            packetNum = sendPackIt(packChan, packetNum)
+            time.sleep(.25)
+        #View all users connected to the server
+        elif message.__eq__("/who"):
+            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "")
+            packetNum = sendPackIt(packWho, packetNum)
+            time.sleep(.25)
+        #Send a private message to a user on the server
+        elif message[:2].__eq__("/w"):
+            msgToSend = Fore.MAGENTA + message + Style.RESET_ALL
+            msg = message.split(' ')
+            packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend)
+            packetNum = sendPackIt(packWhisp, packetNum)
+            time.sleep(.25)
+        #Reply to the last user who send you a private message
+        elif message[:2].__eq__("/r"):
+            msgToSend = Fore.MAGENTA + message + Style.RESET_ALL
+            msg = message.split(' ')
+            packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend)
+            packetNum = sendPackIt(packWhisp, packetNum)
+            time.sleep(.25)
+        #Lists the available commands
+        elif message.__eq__("/help"):
+            listCommands()
+        #Disconnects from the server
+        elif message.__eq__("/dc"):
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+            packetNum = sendPackIt(packQuit, packetNum)
+            __client.close()
+        #Connects to the server
+        elif message.__eq__("/conn"):
+            __client = connectToServer
+        #Disconnect from the server, exit the client
+        elif message.__eq__("/quit"):
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+            packetNum = sendPackIt(packQuit, packetNum)
             __client.close()
             exit()
-        elif message.__eq__("/help"):
-            print(message)
-            listCommands()
-        elif message.__eq__("/dc"):
-            print(message)
-            __client.close()
-        elif message.__eq__("/conn"):
-            print(message)
-            __client = connectToServer()
-        elif message[:5].__eq__("/join"):
-            print(message)
-            __prevChannel = __curChannel
-            __curChannel = switchChannel(message)
-            time.sleep(.25)
-        elif message.__eq__("/channels"):
-            print(message)
-            __client.sendall("chan".encode('utf-8'))
-            time.sleep(.25)
-        elif message.__eq__("/whochan"):
-            command = "whochan_" + __curChannel
-            __client.sendall(command.encode('utf-8'))
-            time.sleep(.25)
-        elif message.__eq__("/who"):
-            __client.sendall("who".encode('utf-8'))
-            time.sleep(.25)
-        elif message[:2].__eq__("/w"):
-            cmdMsg = message.split(' ')
-            fixMsg = "".join(str(e + " ") for e in cmdMsg)
-            #cmdMsg[1] == user to send message to
-            command = "w_" + cmdMsg[1] + "_" + fixMsg
-            print(Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, cmdMsg[1], fixMsg) + Style.RESET_ALL)
-            __client.sendall(command.encode('utf-8'))
-            time.sleep(.25)
-        elif message[:2].__eq__("/r"):
-            command = "w_" + __prevWhisper + "_" + message
-            print(Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, __prevWhisper, message) + Style.RESET_ALL)
-            __client.sendall(command.encode('utf-8'))
-            time.sleep(.25)
+        #Send a standard message to the current channel on the server
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
-            __client.sendall(message.encode('utf-8'))
+            packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message)
+            packetNum = sendPackIt(packMsg, packetNum)
 
     except (SystemExit, KeyboardInterrupt):
+        packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+        packetNum = sendPackIt(packQuit, packetNum)
+        time.sleep(.25)
+        __client.close()
         break
