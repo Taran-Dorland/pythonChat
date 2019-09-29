@@ -7,6 +7,7 @@ import pickle
 #https://pypi.org/project/colorama/
 from colorama import init, Fore, Back, Style
 
+#Custom object to store all data being sent and received
 class packIt:
     packNum = 0
     vNum = 0
@@ -25,7 +26,6 @@ class packIt:
         self.to_user = to_user
         self.message = message
         
-
 #Listens for incoming data from server
 def incoming(conn):
 
@@ -167,7 +167,7 @@ with open('C:\GitProjects\pythonchat\client\settings.json') as f:
 
 #Packet info
 packetNum = 0
-versionNum = 1.0
+versionNum = json_data["Version"]
 
 global __curChannel, __prevChannel, __prevWhisper
 __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)

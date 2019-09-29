@@ -10,7 +10,7 @@ from colorama import init, Fore, Back, Style
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
 #Also updated from Python2 to Python3
 
-#Custom object to store all data being sent
+#Custom object to store all data being sent and received
 class packIt:
     packNum = 0
     vNum = 0
@@ -31,8 +31,11 @@ class packIt:
 
 #Send a packIt to the given socket
 def sendPackIt(conn, packIt):
+    global packetNum
+
     packToSend = pickle.dumps(packIt)
     conn.sendall(packToSend)
+    packetNum += 1
 
 #Accepts a connection from the client, runs through setup
 def accept(conn, cli_addr):
@@ -173,8 +176,9 @@ users = {}
 usersChan = {}
 channels = json_data["channels"]
 
+global packetNum
 packetNum = 1
-versionNum = 1.0
+versionNum = json_data["Version"]
 
 while True:
     try:
@@ -208,62 +212,50 @@ while True:
             except socket.error:
                 continue
 
-            if not message:
-                #
+            #Standard broadcast message to all in user's channel
+            if message_data.messType == 10:
+                broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message_data.message), usersChan[name])
+            #User request to join a different chat channel
+            elif message_data.messType == 11:
+                informServer(name, "join")
+                swapChannel(name, message_data.message)
+            #User requests a list of channels on the server
+            elif message_data.messType == 12:
+                informServer(name, "channels")
+                reply = "Channels: "
+                reply = reply + " ".join(str(e) for e in channels)
+                packReply = packIt(packetNum, versionNum, 12, "", "SERVER", name, reply)
+                sendPackIt(conn, packReply)
+            #User requests a list of users in their current channel
+            elif message_data.messType == 13:
+                informServer(name, "whochan")
+                chanToCompare = message_data.channel
+                names = Style.BRIGHT + Fore.BLACK + Back.WHITE
+                for _name, _chan in usersChan.items():
+                    if chanToCompare.__eq__(_chan):
+                        names = names + _name + ", "
+                names = names + Style.RESET_ALL
+                packReply = packIt(packetNum, versionNum, 13, "", "SERVER", name, names)
+                sendPackIt(conn, packReply)
+            #User requests a list of users connected to the server
+            elif message_data.messType == 14:
+                informServer(name, "who")
+                names = Style.BRIGHT + Fore.BLACK + Back.WHITE
+                for _name, _conn in users.items():
+                    names = names + _name + ", "
+                names = names + Style.RESET_ALL
+                packReply = packIt(packetNum, versionNum, 14, "", "SERVER", name, names)
+                sendPackIt(conn, packReply)
+            #Send a private message to another user
+            elif message_data.messType == 15:
+                informServer(name, "whisper")
+                broadcastPrivateMsg(name, message_data.whisper, message_data.message)
+            #User disconnects from the server, delete their user data on the server
+            elif message_data.messType == 99:
                 del users[name]
                 del usersChan[name]
                 broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
                 break
-            else:
-
-                #Standard broadcast message to all in user's channel
-                if message_data.messType == 10:
-                    broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message_data.message), usersChan[name])
-                #User request to join a different chat channel
-                elif message_data.messType == 11:
-                    informServer(name, "join")
-                    swapChannel(name, message_data.message)
-                #User requests a list of channels on the server
-                elif message_data.messType == 12:
-                    informServer(name, "channels")
-                    reply = "Channels: "
-                    reply = reply + " ".join(str(e) for e in channels)
-                    packReply = packIt(packetNum, versionNum, 12, "", "SERVER", name, reply)
-                    sendPackIt(conn, packReply)
-                    packetNum += 1
-                #User requests a list of users in their current channel
-                elif message_data.messType == 13:
-                    informServer(name, "whochan")
-                    chanToCompare = message_data.channel
-                    names = Style.BRIGHT + Fore.BLACK + Back.WHITE
-                    for _name, _chan in usersChan.items():
-                        if chanToCompare.__eq__(_chan):
-                            names = names + _name + ", "
-                    names = names + Style.RESET_ALL
-                    packReply = packIt(packetNum, versionNum, 13, "", "SERVER", name, names)
-                    sendPackIt(conn, packReply)
-                    packetNum += 1
-                #User requests a list of users connected to the server
-                elif message_data.messType == 14:
-                    informServer(name, "who")
-                    names = Style.BRIGHT + Fore.BLACK + Back.WHITE
-                    for _name, _conn in users.items():
-                        names = names + _name + ", "
-                    names = names + Style.RESET_ALL
-                    packReply = packIt(packetNum, versionNum, 14, "", "SERVER", name, names)
-                    sendPackIt(conn, packReply)
-                    packetNum += 1
-                #Send a private message to another user
-                elif message_data.messType == 15:
-                    informServer(name, "whisper")
-                    broadcastPrivateMsg(name, message_data.whisper, message_data.message)
-                    packetNum += 1
-                #User disconnects from the server
-                elif message_data.messType == 99:
-                    del users[name]
-                    del usersChan[name]
-                    broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
-                    break
 
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
