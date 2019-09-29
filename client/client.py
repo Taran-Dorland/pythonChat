@@ -220,6 +220,8 @@ while True:
             listCommands()
         #Disconnects from the server
         elif message.__eq__("/dc"):
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+            packetNum = sendPackIt(packQuit, packetNum)
             __client.close()
         #Connects to the server
         elif message.__eq__("/conn"):
@@ -227,7 +229,7 @@ while True:
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
             packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
-             packetNum = sendPackIt(packQuit, packetNum)
+            packetNum = sendPackIt(packQuit, packetNum)
             __client.close()
             exit()
         #Send a standard message to the current channel on the server
@@ -237,4 +239,8 @@ while True:
             packetNum = sendPackIt(packMsg, packetNum)
 
     except (SystemExit, KeyboardInterrupt):
+        packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+        packetNum = sendPackIt(packQuit, packetNum)
+        time.sleep(.25)
+        __client.close()
         break
