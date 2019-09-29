@@ -166,7 +166,7 @@ while True:
         #
         for name, conn in users.items():
             try:
-                message = conn.recv(1024)
+                message = conn.recv(4096)
                 message_data = pickle.loads(message)
             except socket.error:
                 continue
@@ -177,41 +177,11 @@ while True:
                 broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
                 break
             else:
-                #Let the user request to join a specific channel
-                if message[:4].__eq__("join"):
-                    informServer(name, "join")
-                    swapChannel(name, message)
-                #Return a list of channels to the user
-                elif message.__eq__("chan"):
-                    informServer(name, "channels")
-                    reply = "Channels: "
-                    reply = reply + " ".join(str(e) for e in channels)
-                    conn.sendall(reply.encode('utf-8'))
-                #Return a string of users in a specified channel
-                elif message[:8].__eq__("whochan_"):
-                    informServer(name, "whochan")
-                    chanToComp = message[8:]
-                    names = Style.BRIGHT + Fore.BLACK + Back.WHITE
-                    for _name, _chan in usersChan.items():
-                        if chanToComp.__eq__(_chan):
-                            names = names +  _name + ", "
-                    names = names + Style.RESET_ALL
-                    conn.sendall(names.encode('utf-8'))
-                #Return a string of users who are connected to the server
-                elif message.__eq__("who"):
-                    informServer(name, "who")
-                    names = Style.BRIGHT + Fore.BLACK + Back.WHITE
-                    for _name, _conn in users.items():
-                        names = names +  _name + ", "
-                    names = names + Style.RESET_ALL
-                    conn.sendall(names.encode('utf-8'))
-                #Command to send a message to a specific user
-                elif message[:2].__eq__("w_"):
-                    informServer(name, "whisper")
-                    cmdMsg = message.split('_')
-                    boradcastPrivateMsg(name, cmdMsg[1], cmdMsg[2])
-                else:
+
+                #Standard broadcast message to all in user's channel
+                if message_data.messType == 10:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message_data.message), usersChan[name])
+
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         __server.close()

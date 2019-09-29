@@ -129,7 +129,7 @@ def switchChannel(message):
     return message[6:]
 
 #Load client settings from settings.json
-with open('D:\Git Projects\pythonChat\client\settings.json') as f:
+with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
 global __curChannel, __prevChannel, __prevWhisper
@@ -148,8 +148,10 @@ while True:
         message = input("Enter your message: ")
         print("\033[A                             \033[A")
 
-        pack = packIt(message)
+        pack = packIt(packetNum, versionNum, messageType, message)
         pack_data = pickle.dumps(pack)
+
+        packetNum += 1
 
         #Kill connection to server and terminate program
         if message.__eq__("/quit"):
