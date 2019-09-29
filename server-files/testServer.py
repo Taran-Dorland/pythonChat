@@ -10,11 +10,29 @@ from colorama import init, Fore, Back, Style
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
 #Also updated from Python2 to Python3
 
+#Custom object to store all data being sent
 class packIt:
     packNum = 0
     vNum = 0
     messType = 0
+    channel = ""
+    from_user = ""
+    to_user = ""
     message = ""
+
+    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message):
+        self.packNum = packNum
+        self.vNum = vNum
+        self.messType = messType
+        self.channel = channel
+        self.from_user = from_user
+        self.to_user = to_user
+        self.message = message
+
+#Send a packIt to the given socket
+def sendPackIt(conn, packIt):
+    packToSend = pickle.dumps(packIt)
+    conn.sendall(packToSend)
 
 #Accepts a connection from the client, runs through setup
 def accept(conn, cli_addr):
@@ -51,7 +69,9 @@ def broadcast(name, message):
         if to_name != name:
             try:
                 announce = Style.BRIGHT + Fore.RED + "SE" + Fore.BLUE + "RV" + Fore.MAGENTA + "ER" + Style.RESET_ALL
-                conn.sendall("{0}: {1}".format(announce, message).encode('utf-8'))
+                msgToSend = "{0}: {1}".format(announce, message)
+                packMsg = packIt(packetNum, versionNum, 10, "", "", msgToSend)
+                sendPackIt(conn, packMsg)
             except socket.error:
                 pass
 
@@ -64,26 +84,29 @@ def broadcastChannel(name, message, channel):
         if channel.__eq__(curr_channel):
             if user_name != name:
                 try:
-                    users[user_name].sendall(message.encode('utf-8'))
+                    packMsg = packIt(packetNum, versionNum, 10, channel, "", message)
+                    sendPackIt(users[user_name], packMsg)
                 except socket.error:
                     pass
 
 #Broadcast a message to a specified user from another user (Private message)
-def boradcastPrivateMsg(name, to_name, message):
-    msg = "10{0}@{1}=> {2}".format(name, to_name, message)
+def broadcastPrivateMsg(name, to_name, message):
+    msg = "{0}@{1}=> {2}".format(name, to_name, message)
 
     #Check if the user actually exists
     if to_name in users:
-        print(Fore.MAGENTA + msg[2:] + Style.RESET_ALL)
+        print(Fore.MAGENTA + msg + Style.RESET_ALL)
         try:
-            users[to_name].sendall(msg.encode('utf-8'))
+            packPvtMsg = packIt(packetNum, versionNum, 15, "", to_name, msg)
+            sendPackIt(users[to_name], packPvtMsg)
         except socket.error:
             pass
     else:
         print(Fore.RED + "{0} attempted to send message to {1}: Error user doesn't exist.".format(name, to_name) + Style.RESET_ALL)
         replyMsg = Fore.RED + "Error: User {0} does not exist.".format(to_name) + Style.RESET_ALL
         try:
-            users[name].sendall(replyMsg.encode('utf-8'))
+            packPvtMsg = packIt(packetNum, versionNum, 15, "", "SERVER", name, replyMsg)
+            sendPackIt(users[name], packPvtMsg)
         except socket.error:
             pass
 
@@ -101,20 +124,20 @@ def swapChannel(name, message):
         partMsg = "{0} has left the channel.".format(name)
         joinMsg = "{0} has joined the channel.".format(name)
 
-        users[name].sendall("1".encode('utf-8'))
-
         broadcastChannel(name, Fore.WHITE + Style.DIM + partMsg + Style.RESET_ALL, usersChan[name])
         usersChan[name] = joinChannel
 
         broadcastChannel(name, Fore.WHITE + Style.DIM + joinMsg + Style.RESET_ALL, usersChan[name])
         replyMsg = Fore.GREEN + "You have successfully joined {0}.".format(usersChan[name]) + Style.RESET_ALL
-        users[name].sendall(replyMsg.encode('utf-8'))
+
+        replyPack = packIt(packetNum, versionNum, 56, joinChannel, "SERVER", name, replyMsg)
+        sendPackIt(users[name], replyPack)
     else:
         print(Fore.RED + "Unable to swap {0}'s channel; channel '{1}' does not exist.".format(name, joinChannel) + Style.RESET_ALL)
-        #Error 155: UNABLE TO SWAP CHANNELS
-        users[name].sendall("155".encode('utf-8'))
+        
         replyMsg = Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL
-        users[name].sendall(replyMsg.encode('utf-8'))
+        replyPack = packIt(packetNum, versionNum, 55, "", "SERVER", name, replyMsg)
+        sendPackIt(users[name], replyPack)
 
 #Setup the server to the specified IP and Port in settings.json
 def initializeServer():
@@ -146,6 +169,9 @@ __server, __MAX_CONN = initializeServer()
 users = {}
 usersChan = {}
 channels = json_data["channels"]
+
+packetNum = 1
+versionNum = 1.0
 
 while True:
     try:
@@ -185,6 +211,45 @@ while True:
                 #Standard broadcast message to all in user's channel
                 if message_data.messType == 10:
                     broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message_data.message), usersChan[name])
+                #User request to join a different chat channel
+                elif message_data.messType == 11:
+                    informServer(name, "join")
+                    swapChannel(name, message_data.message)
+                #User requests a list of channels on the server
+                elif message_data.messType == 12:
+                    informServer(name, "channels")
+                    reply = "Channels: "
+                    reply = reply + " ".join(str(e) for e in channels)
+                    packReply = packIt(packetNum, versionNum, 12, "", "SERVER", name, reply)
+                    sendPackIt(conn, packReply)
+                    packetNum += 1
+                #User requests a list of users in their current channel
+                elif message_data.messType == 13:
+                    informServer(name, "whochan")
+                    chanToCompare = message_data.channel
+                    names = Style.BRIGHT + Fore.BLACK + Back.WHITE
+                    for _name, _chan in usersChan.items():
+                        if chanToCompare.__eq__(_chan):
+                            names = names + _name + ", "
+                    names = names + Style.RESET_ALL
+                    packReply = packIt(packetNum, versionNum, 13, "", "SERVER", name, names)
+                    sendPackIt(conn, packReply)
+                    packetNum += 1
+                #User requests a list of users connected to the server
+                elif message_data.messType == 14:
+                    informServer(name, "who")
+                    names = Style.BRIGHT + Fore.BLACK + Back.WHITE
+                    for _name, _conn in users.items():
+                        names = names + _name + ", "
+                    names = names + Style.RESET_ALL
+                    packReply = packIt(packetNum, versionNum, 14, "", "SERVER", name, names)
+                    sendPackIt(conn, packReply)
+                    packetNum += 1
+                #Send a private message to another user
+                elif message_data.messType == 15:
+                    informServer(name, "whisper")
+                    broadcastPrivateMsg(name, message_data.whisper, message_data.message)
+                    packetNum += 1
 
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
