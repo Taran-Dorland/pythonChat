@@ -73,7 +73,7 @@ def broadcast(name, message):
             try:
                 announce = Style.BRIGHT + Fore.RED + "SE" + Fore.BLUE + "RV" + Fore.MAGENTA + "ER" + Style.RESET_ALL
                 msgToSend = "{0}: {1}".format(announce, message)
-                packMsg = packIt(packetNum, versionNum, 10, "", "", msgToSend)
+                packMsg = packIt(packetNum, versionNum, 10, "", "SERVER", to_name, msgToSend)
                 sendPackIt(conn, packMsg)
             except socket.error:
                 pass
@@ -188,7 +188,8 @@ while True:
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
             if len(users) >= __MAX_CONN:
                 rejectMsg = Fore.RED + "SERVER: Connection refused. Server is full." + Style.RESET_ALL
-                conn.sendall(rejectMsg.encode('utf-8'))
+                packReject = packIt(packetNum, versionNum, 98, "", "SERVER", "", rejectMsg)
+                sendPackIt(conn, packReject)
                 conn.close()
             else:  
                 accept(conn, addr)
@@ -207,7 +208,7 @@ while True:
             except socket.error:
                 continue
 
-            if not message_data.message:
+            if not message:
                 #
                 del users[name]
                 del usersChan[name]
