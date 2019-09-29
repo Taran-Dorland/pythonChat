@@ -168,8 +168,10 @@ while True:
             try:
                 message = conn.recv(4096)
                 message_data = pickle.loads(message)
-                print(message_data.packNum + " " + message_data.vNum + " " + message_data.messType)
-                
+                print(message_data.packNum)
+                print(message_data.vNum)
+                print(message_data.messType)
+
             except socket.error:
                 continue
             if not message:
