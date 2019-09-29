@@ -2,12 +2,19 @@ import socket
 import threading
 import time
 import json
+import pickle
 
 #https://pypi.org/project/colorama/
 from colorama import init, Fore, Back, Style
 
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
 #Also updated from Python2 to Python3
+
+class packIt:
+    packNum = 0
+    vNum = 0
+    messType = 0
+    message = ""
 
 #Accepts a connection from the client, runs through setup
 def accept(conn, cli_addr):
@@ -159,7 +166,8 @@ while True:
         #
         for name, conn in users.items():
             try:
-                message = conn.recv(1024).decode('utf-8')
+                message = conn.recv(1024)
+                message_data = pickle.loads(message)
             except socket.error:
                 continue
             if not message:
@@ -203,7 +211,7 @@ while True:
                     cmdMsg = message.split('_')
                     boradcastPrivateMsg(name, cmdMsg[1], cmdMsg[2])
                 else:
-                    broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message), usersChan[name])
+                    broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message_data.message), usersChan[name])
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
         __server.close()

@@ -2,9 +2,18 @@ import socket
 import threading
 import time
 import json
+import pickle
 
 #https://pypi.org/project/colorama/
 from colorama import init, Fore, Back, Style
+
+class packIt:
+    def __init__(self, packNum, vNum, messType, message):
+        self.packNum = packNum
+        self.vNum = vNum
+        self.messType = messType
+        self.message = message
+        
 
 #Listens for incoming data from server
 def incoming(conn):
@@ -127,12 +136,20 @@ global __curChannel, __prevChannel, __prevWhisper
 __client, __username, __curChannel = connectToServer()
 __prevChannel = __curChannel
 
+#Packet info
+packetNum = 1
+versionNum = 1.0
+messageType = 10
+
 #Client main
 while True:
     try:
         #https://stackoverflow.com/questions/10829650/delete-the-last-input-row-in-python
         message = input("Enter your message: ")
         print("\033[A                             \033[A")
+
+        pack = packIt(message)
+        pack_data = pickle.dumps(pack)
 
         #Kill connection to server and terminate program
         if message.__eq__("/quit"):
@@ -178,7 +195,7 @@ while True:
             time.sleep(.25)
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
-            __client.sendall(message.encode('utf-8'))
+            __client.sendall(pack_data)
 
     except (SystemExit, KeyboardInterrupt):
         break
