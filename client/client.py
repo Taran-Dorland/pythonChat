@@ -226,6 +226,8 @@ while True:
             __client = connectToServer
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+             packetNum = sendPackIt(packQuit, packetNum)
             __client.close()
             exit()
         #Send a standard message to the current channel on the server

@@ -263,6 +263,7 @@ while True:
                     del users[name]
                     del usersChan[name]
                     broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
+                    break
 
         time.sleep(.1)
     except (SystemExit, KeyboardInterrupt):
