@@ -82,50 +82,53 @@ def listCommands():
     print("/quit\t\t\t:Disconnects from the server and exits the program.\n")
 
 #Lets the user select a username, will reject if that username is already registered on the server
-def enterUsername(conn):
+def enterUsername(conn, packNum, vNum):
     #First data being sent to the server is a username
     while True:
         try:
             username = input("Enter a username: ")
-            conn.sendall(username.encode('utf-8'))
+            packLogin = packIt(packNum, vNum, 25, "", username, "", username)
+            packNum = sendPackIt(packLogin, packNum)
 
             reply = conn.recv(1024)
-            data = reply.decode('utf-8')
+            reply_data = pickle.loads(reply)
 
-            if data.__eq__("0"):
+            if reply_data.messType == 0:
                 print(Fore.RED + "Name already in use." + Style.RESET_ALL)
             else:
-                print(data)
-                channel = conn.recv(1024).decode('utf-8')
-                return username, channel
+                print(reply_data.message)
+                channel = reply_data.channel
+                return username, channel, packNum
 
         except socket.error:
             print("Server connection lost.")
             exit()
 
 #For auto-login
-def autoUsername(conn, username):
-    while True:
-        try:
-            conn.sendall(username.encode('utf-8'))
+def autoUsername(conn, username, packNum, vNum):
+    try:
+        channel = ""
+        packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username)
+        packNum = sendPackIt(packAutoLogin, packNum)
 
-            reply = conn.recv(1024)
-            data = reply.decode('utf-8')
+        reply = conn.recv(1024)
+        reply_data = pickle.loads(reply)
 
-            if data.__eq__("0"):
-                print(Fore.RED + "Name already in use. Disconnecting..." + Style.RESET_ALL)
-                conn.close()
-            else:
-                print(data)
-                channel = conn.recv(1024).decode('utf-8')
-                return username, channel
+        if reply_data.messType == 0:
+            print(Fore.RED + "Name already in use. Switching to manual..." + Style.RESET_ALL)
+            username, channel, packNum = enterUsername(conn, packNum, vNum)
+        else:
+            print(reply_data.message)
+            channel = reply_data.channel
 
-        except socket.error:
-            print("Server connection lost.")
-            exit()
+        return username, channel, packNum
+
+    except socket.error:
+        print("Server connection lost.")
+        exit()
 
 #Connects the user to the server specified by the IP and Port entered in settings.json
-def connectToServer():
+def connectToServer(packNum, vNum):
     #Establish connection to server
     HOST = json_data["IP"]
     PORT = json_data["PORT"]
@@ -137,15 +140,15 @@ def connectToServer():
     auto_Connect = json_data["auto-connect"]
 
     if auto_Connect == False:
-        username, channel = enterUsername(client)
+        username, channel, packNum = enterUsername(client, packNum, vNum)
     else:
-        username, channel = autoUsername(client, json_data["username"])
+        username, channel, packNum = autoUsername(client, json_data["username"], packNum, vNum)
 
     #Create a thread to listen for messages coming from the server
     listenThread = threading.Thread(target = incoming, args = (client, ))
     listenThread.start()
 
-    return client, username, channel
+    return client, username, channel, packNum
 
 #Send a packit to the server
 def sendPackIt(packIt, pNum):
@@ -158,13 +161,13 @@ def sendPackIt(packIt, pNum):
 with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
-global __curChannel, __prevChannel, __prevWhisper
-__client, __username, __curChannel = connectToServer()
-__prevChannel = __curChannel
-
 #Packet info
-packetNum = 1
+packetNum = 0
 versionNum = 1.0
+
+global __curChannel, __prevChannel, __prevWhisper
+__client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+__prevChannel = __curChannel
 
 #Client main
 while True:
@@ -175,7 +178,7 @@ while True:
 
         #Join a chat channel on the server
         if message[:5].__eq__("/join"):
-            channel = message[6:]
+            channel = message[2:]
             packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel)
             packetNum = sendPackIt(packJoin, packetNum)
             time.sleep(.25)
@@ -192,7 +195,7 @@ while True:
         #View all users connected to the server
         elif message.__eq__("/who"):
             packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "")
-            packetNum = sendPackIt(packWho)
+            packetNum = sendPackIt(packWho, packetNum)
             time.sleep(.25)
         #Send a private message to a user on the server
         elif message[:2].__eq__("/w"):

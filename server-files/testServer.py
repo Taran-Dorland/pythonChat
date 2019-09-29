@@ -40,12 +40,15 @@ def accept(conn, cli_addr):
     def threaded():
         while True:
             try:
-                name = conn.recv(1024).decode('utf-8')
+                client_name = conn.recv(1024)
+                client_name_data = pickle.loads(client_name)
+                name = client_name_data.message
             except socket.error:
                 continue
             #Check if username is already in use
             if name in users:
-                conn.sendall("0".encode('utf-8'))
+                packReply = packIt(packetNum, versionNum, 0, "", "SERVER", "", "")
+                sendPackIt(conn, packReply)
             elif name:
                 conn.setblocking(False)
 
@@ -57,8 +60,8 @@ def accept(conn, cli_addr):
                 broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0])
                 
                 replyMsg = Fore.GREEN + "You have successfully connected to the server." + Style.RESET_ALL
-                conn.sendall(replyMsg.encode('utf-8'))
-                conn.sendall(usersChan[name].encode('utf-8'))
+                packReplyMsg = packIt(packetNum, versionNum, 10, usersChan[name], "SERVER", name, replyMsg)
+                sendPackIt(conn, packReplyMsg)
                 break
     threading.Thread(target=threaded).start()
 
@@ -203,7 +206,7 @@ while True:
                 continue
             except socket.error:
                 continue
-            
+
             if not message:
                 #
                 del users[name]
