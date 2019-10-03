@@ -5,7 +5,6 @@ import json
 import pickle
 
 #https://pypi.org/project/colorama/
-from colorama import init, Fore, Back, Style
 
 #Roughly based on https://rosettacode.org/wiki/Chat_server#Python with multiple changes and additions
 #Also updated from Python2 to Python3
@@ -59,10 +58,10 @@ def accept(conn, cli_addr):
                 users[name] = conn
                 usersChan[name] = channels[0]
                 print("{0}: {1}".format(name, cli_addr))
-                broadcast(name, Fore.YELLOW + "{0} has connected to the server.".format(name) + Style.RESET_ALL)
-                broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0])
+                broadcast(name, "{0} has connected to the server.".format(name) )
+                broadcastChannel(name,   "{0} has joined channel.".format(name) , channels[0])
                 
-                replyMsg = Fore.GREEN + "You have successfully connected to the server." + Style.RESET_ALL
+                replyMsg =  "You have successfully connected to the server." 
                 packReplyMsg = packIt(packetNum, versionNum, 10, usersChan[name], "SERVER", name, replyMsg)
                 sendPackIt(conn, packReplyMsg)
                 break
@@ -74,7 +73,7 @@ def broadcast(name, message):
     for to_name, conn in users.items():
         if to_name != name:
             try:
-                announce = Style.BRIGHT + Fore.RED + "SE" + Fore.BLUE + "RV" + Fore.MAGENTA + "ER" + Style.RESET_ALL
+                announce =  "SE"  + "RV"  + "ER" 
                 msgToSend = "{0}: {1}".format(announce, message)
                 packMsg = packIt(packetNum, versionNum, 10, "", "SERVER", to_name, msgToSend)
                 sendPackIt(conn, packMsg)
@@ -101,15 +100,15 @@ def broadcastPrivateMsg(name, to_name, message):
 
     #Check if the user actually exists
     if to_name in users:
-        print(Fore.MAGENTA + msg + Style.RESET_ALL)
+        print( msg )
         try:
             packPvtMsg = packIt(packetNum, versionNum, 15, "", name, to_name, msg)
             sendPackIt(users[to_name], packPvtMsg)
         except socket.error:
             pass
     else:
-        print(Fore.RED + "{0} attempted to send message to {1}: Error user doesn't exist.".format(name, to_name) + Style.RESET_ALL)
-        replyMsg = Fore.RED + "Error: User {0} does not exist.".format(to_name) + Style.RESET_ALL
+        print( "{0} attempted to send message to {1}: Error user doesn't exist.".format(name, to_name) )
+        replyMsg =  "Error: User {0} does not exist.".format(to_name) 
         try:
             packPvtMsg = packIt(packetNum, versionNum, 15, "", "SERVER", name, replyMsg)
             sendPackIt(users[name], packPvtMsg)
@@ -130,18 +129,18 @@ def swapChannel(name, message):
         partMsg = "{0} has left the channel.".format(name)
         joinMsg = "{0} has joined the channel.".format(name)
 
-        broadcastChannel(name, Fore.WHITE + Style.DIM + partMsg + Style.RESET_ALL, usersChan[name])
+        broadcastChannel(name,   + partMsg , usersChan[name])
         usersChan[name] = joinChannel
 
-        broadcastChannel(name, Fore.WHITE + Style.DIM + joinMsg + Style.RESET_ALL, usersChan[name])
-        replyMsg = Fore.GREEN + "You have successfully joined {0}.".format(usersChan[name]) + Style.RESET_ALL
+        broadcastChannel(name,   + joinMsg , usersChan[name])
+        replyMsg =  "You have successfully joined {0}.".format(usersChan[name]) 
 
         replyPack = packIt(packetNum, versionNum, 56, joinChannel, "SERVER", name, replyMsg)
         sendPackIt(users[name], replyPack)
     else:
-        print(Fore.RED + "Unable to swap {0}'s channel; channel '{1}' does not exist.".format(name, joinChannel) + Style.RESET_ALL)
+        print( "Unable to swap {0}'s channel; channel '{1}' does not exist.".format(name, joinChannel) )
         
-        replyMsg = Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL
+        replyMsg =  "SERVER: Unable to swap channels; channel does not exist." 
         replyPack = packIt(packetNum, versionNum, 55, "", "SERVER", name, replyMsg)
         sendPackIt(users[name], replyPack)
 
@@ -164,7 +163,7 @@ def initializeServer():
 
 #Prints information to server terminal
 def informServer(name, command):
-    print(Fore.CYAN + Style.BRIGHT + "{0} issued command '{1}' on server.".format(name, command) + Style.RESET_ALL)
+    print(  "{0} issued command '{1}' on server.".format(name, command) )
 
 #Load server settings from settings.json
 with open('settings.json') as f:
@@ -191,7 +190,7 @@ while True:
 
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
             if len(users) >= __MAX_CONN:
-                rejectMsg = Fore.RED + "SERVER: Connection refused. Server is full." + Style.RESET_ALL
+                rejectMsg =  "SERVER: Connection refused. Server is full." 
                 packReject = packIt(packetNum, versionNum, 98, "", "SERVER", "", rejectMsg)
                 sendPackIt(conn, packReject)
                 conn.close()
@@ -230,20 +229,18 @@ while True:
             elif message_data.messType == 13:
                 informServer(name, "whochan")
                 chanToCompare = message_data.channel
-                names = Style.BRIGHT + Fore.BLACK + Back.WHITE
                 for _name, _chan in usersChan.items():
                     if chanToCompare.__eq__(_chan):
                         names = names + _name + ", "
-                names = names + Style.RESET_ALL
+                names = names
                 packReply = packIt(packetNum, versionNum, 13, "", "SERVER", name, names)
                 sendPackIt(conn, packReply)
             #User requests a list of users connected to the server
             elif message_data.messType == 14:
                 informServer(name, "who")
-                names = Style.BRIGHT + Fore.BLACK + Back.WHITE
                 for _name, _conn in users.items():
                     names = names + _name + ", "
-                names = names + Style.RESET_ALL
+                names = names 
                 packReply = packIt(packetNum, versionNum, 14, "", "SERVER", name, names)
                 sendPackIt(conn, packReply)
             #Send a private message to another user
@@ -254,7 +251,7 @@ while True:
             elif message_data.messType == 99:
                 del users[name]
                 del usersChan[name]
-                broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)
+                broadcast(name,   "{0} has disconnected.".format(name) )
                 break
 
         time.sleep(.1)
