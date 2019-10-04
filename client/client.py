@@ -165,7 +165,7 @@ def sendPackIt(packIt, pNum):
     return pNum + 1
 
 #Load client settings from settings.json
-with open('C:\GitProjects\pythonchat\client\settings.json') as f:
+with open('settings.json') as f:
     json_data = json.load(f)
 
 #Packet info
