@@ -248,6 +248,8 @@ while True:
             packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message)
             packetNum = sendPackIt(packMsg, packetNum)
 
+    except socket.error:
+        exit()
     except (SystemExit, KeyboardInterrupt):
         break
 
