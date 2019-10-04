@@ -252,6 +252,8 @@ while True:
                 broadcastPrivateMsg(name, message_data.to_user, message_data.message)
             #User disconnects from the server, delete their user data on the server
             elif message_data.messType == 99:
+                packReply = packIt(packetNum, versionNum, 99, "", "SERVER", name, "Closing connection.")
+                sendPackIt(conn, packReply)
                 del users[name]
                 del usersChan[name]
                 broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL)

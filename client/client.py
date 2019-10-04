@@ -63,6 +63,9 @@ def incoming(conn):
             #Failed to sent a private message to a user, user doesn't exist
             elif message_data.messType == 57:
                 print(message_data.message)
+            #Return packet to disconnect from server
+            elif message_data.messType == 99:
+                print(message_data.message)
 
         except EOFError:
             print("EOF Error, Continuing..")
