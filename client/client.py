@@ -185,6 +185,7 @@ try:
     __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
 except ConnectionRefusedError:
     print("Unable to connect to the server; connection refused.")
+    exit()
 
 __prevChannel = __curChannel
 
