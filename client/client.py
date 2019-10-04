@@ -27,13 +27,13 @@ class packIt:
         self.message = message
         
 #Listens for incoming data from server
-def incoming():
+def incoming(conn):
 
     global __curChannel, __prevChannel, __prevWhisper
 
     while True:
         try:
-            message = __client.recv(4096)
+            message = conn.recv(4096)
             message_data = pickle.loads(message)
             
             #Standard message from channel
@@ -64,12 +64,12 @@ def incoming():
             elif message_data.messType == 57:
                 print(message_data.message)
 
+        except EOFError:
+            print("EOF Error, Continuing..")
+            pass
         except socket.error:
             print("Server connection lost.")
             break
-        except EOFError:
-            print("EOF Error, Continuing..")
-            continue
 
 #Outputs a list of commands that the user can enter in the chat
 def listCommands():
@@ -151,6 +151,10 @@ def connectToServer(packNum, vNum):
     else:
         username, channel, packNum = autoUsername(client, json_data["username"], packNum, vNum)
 
+    #Create a thread to listen for messages coming from the server
+    listenThread = threading.Thread(target = incoming, args = (client, ))
+    listenThread.start()
+
     return client, username, channel, packNum
 
 #Send a packit to the server
@@ -161,7 +165,7 @@ def sendPackIt(packIt, pNum):
     return pNum + 1
 
 #Load client settings from settings.json
-with open('settings.json') as f:
+with open('C:\GitProjects\pythonchat\client\settings.json') as f:
     json_data = json.load(f)
 
 #Packet info
@@ -170,11 +174,6 @@ versionNum = json_data["Version"]
 
 global __curChannel, __prevChannel, __prevWhisper
 __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
-
-#Create a thread to listen for messages coming from the server
-listenThread = threading.Thread(target = incoming)
-listenThread.start()
-
 __prevChannel = __curChannel
 
 #Client main
@@ -234,7 +233,7 @@ while True:
         elif message.__eq__("/quit"):
             packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
             packetNum = sendPackIt(packQuit, packetNum)
-            exit()
+            break
         #Send a standard message to the current channel on the server
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
@@ -242,8 +241,10 @@ while True:
             packetNum = sendPackIt(packMsg, packetNum)
 
     except (SystemExit, KeyboardInterrupt):
-        packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
-        packetNum = sendPackIt(packQuit, packetNum)
-        time.sleep(.25)
-        __client.close()
         break
+
+print("Connection closed. Exiting..")
+packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+packetNum = sendPackIt(packQuit, packetNum)
+time.sleep(.25)
+__client.close()
