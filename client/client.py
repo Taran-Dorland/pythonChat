@@ -180,7 +180,13 @@ packetNum = 0
 versionNum = json_data["Version"]
 
 global __curChannel, __prevChannel, __prevWhisper
-__client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+
+try:
+    __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+except ConnectionRefusedError:
+    print("Unable to connect to the server; connection refused.")
+    exit()
+
 __prevChannel = __curChannel
 
 #Client main
