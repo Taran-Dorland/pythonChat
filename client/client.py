@@ -66,6 +66,7 @@ def incoming(conn):
             #Return packet to disconnect from server
             elif message_data.messType == 99:
                 print(message_data.message)
+                break
 
         except EOFError:
             print("EOF Error, Continuing..")
