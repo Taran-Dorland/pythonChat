@@ -249,17 +249,33 @@ while True:
             packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message)
             packetNum = sendPackIt(packMsg, packetNum)
 
+    #Connection lost to server
     except socket.error:
         print("Unable to send message; server connection unavailable.")
         print("Attempting to reconnect to server..")
-        packetNum = 0
-        __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
-        __prevChannel = __curChannel
+
+        #Attempt reconnect to server
+        try:
+            packetNum = 0
+            __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+            __prevChannel = __curChannel
+        except ConnectionRefusedError:
+            print("Failed reconnect attempt.")
+            continue
+
+        #Allow user to exit if they cannot reconnect to the server
+        message = input("Exit client? (Y|N)")
+
+        if message.upper().__eq__("Y"):
+            print("Client exiting..")
+            exit()
 
         continue
+    #Client can still exit with keyboard interrupt
     except (SystemExit, KeyboardInterrupt):
         break
 
+#Proper way to disconnect from the server and close the client
 print("Disconnecting..")
 
 try:
