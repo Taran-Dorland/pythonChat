@@ -27,13 +27,13 @@ class packIt:
         self.message = message
         
 #Listens for incoming data from server
-def incoming(conn):
+def incoming():
 
     global __curChannel, __prevChannel, __prevWhisper
 
     while True:
         try:
-            message = conn.recv(4096)
+            message = __client.recv(4096)
             message_data = pickle.loads(message)
             
             #Standard message from channel
@@ -151,10 +151,6 @@ def connectToServer(packNum, vNum):
     else:
         username, channel, packNum = autoUsername(client, json_data["username"], packNum, vNum)
 
-    #Create a thread to listen for messages coming from the server
-    listenThread = threading.Thread(target = incoming, args = (client, ))
-    listenThread.start()
-
     return client, username, channel, packNum
 
 #Send a packit to the server
@@ -174,6 +170,11 @@ versionNum = json_data["Version"]
 
 global __curChannel, __prevChannel, __prevWhisper
 __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+
+#Create a thread to listen for messages coming from the server
+listenThread = threading.Thread(target = incoming)
+listenThread.start()
+
 __prevChannel = __curChannel
 
 #Client main
