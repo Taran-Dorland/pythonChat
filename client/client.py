@@ -284,6 +284,6 @@ try:
 except socket.error:
     pass
 
-print("Client exiting..")
 time.sleep(.25)
 __client.close()
+print("Client exiting..")
