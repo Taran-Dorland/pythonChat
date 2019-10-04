@@ -249,6 +249,7 @@ while True:
             packetNum = sendPackIt(packMsg, packetNum)
 
     except socket.error:
+        print("Client exiting..")
         exit()
     except (SystemExit, KeyboardInterrupt):
         break
