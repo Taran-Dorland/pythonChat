@@ -75,6 +75,7 @@ def incoming(conn):
             pass
         except socket.error:
             print("Server connection lost.")
+            print("Use /conn to attempt to reconnect to the server.")
             break
 
 #Outputs a list of commands that the user can enter in the chat
@@ -249,13 +250,24 @@ while True:
             packetNum = sendPackIt(packMsg, packetNum)
 
     except socket.error:
-        print("Client exiting..")
-        exit()
+        print("Unable to send message; server connection unavailable.")
+        print("Attempting to reconnect to server..")
+        try:
+            packetNum = 0
+            __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+            __prevChannel = __curChannel
+
+        continue
     except (SystemExit, KeyboardInterrupt):
         break
 
 print("Disconnecting..")
-packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
-packetNum = sendPackIt(packQuit, packetNum)
+
+try:
+    packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+    packetNum = sendPackIt(packQuit, packetNum)
+except socket.error:
+    print("Client exiting..")
+
 time.sleep(.25)
 __client.close()
