@@ -66,6 +66,7 @@ def incoming(conn):
             #Return packet to disconnect from server
             elif message_data.messType == 99:
                 print(message_data.message)
+                conn.close()
                 break
 
         except EOFError:
@@ -232,7 +233,9 @@ while True:
             __client.close()
         #Connects to the server
         elif message.__eq__("/conn"):
-            __client = connectToServer
+            packetNum = 0
+            __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+            __prevChannel = __curChannel
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
             packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
@@ -247,7 +250,7 @@ while True:
     except (SystemExit, KeyboardInterrupt):
         break
 
-print("Connection closed. Exiting..")
+print("Sending disconnect request..")
 packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
 packetNum = sendPackIt(packQuit, packetNum)
 time.sleep(.25)
