@@ -252,13 +252,10 @@ while True:
     except socket.error:
         print("Unable to send message; server connection unavailable.")
         print("Attempting to reconnect to server..")
-        try:
-            packetNum = 0
-            __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
-            __prevChannel = __curChannel
-        except:
-            continue
-        
+        packetNum = 0
+        __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+        __prevChannel = __curChannel
+
         continue
     except (SystemExit, KeyboardInterrupt):
         break
