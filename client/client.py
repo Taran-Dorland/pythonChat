@@ -256,7 +256,9 @@ while True:
             packetNum = 0
             __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
             __prevChannel = __curChannel
-
+        except:
+            continue
+        
         continue
     except (SystemExit, KeyboardInterrupt):
         break
