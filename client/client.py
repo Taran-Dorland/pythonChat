@@ -69,9 +69,6 @@ def incoming(conn):
                 conn.close()
                 break
 
-        except EOFError:
-            print("EOF Error, Continuing..")
-            pass
         except socket.error:
             print("Server connection lost.")
             break
