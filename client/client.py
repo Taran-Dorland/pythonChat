@@ -63,12 +63,19 @@ def incoming(conn):
             #Failed to sent a private message to a user, user doesn't exist
             elif message_data.messType == 57:
                 print(message_data.message)
+            #Return packet to disconnect from server
+            elif message_data.messType == 99:
+                print(message_data.message)
+                conn.close()
+                break
 
         except EOFError:
             print("EOF Error, Continuing..")
-            continue
+            conn.close()
+            pass
         except socket.error:
             print("Server connection lost.")
+            print("Use /conn to attempt to reconnect to the server.")
             break
 
 #Outputs a list of commands that the user can enter in the chat
@@ -228,22 +235,55 @@ while True:
             __client.close()
         #Connects to the server
         elif message.__eq__("/conn"):
-            __client = connectToServer
+            packetNum = 0
+            __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+            __prevChannel = __curChannel
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
             packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
             packetNum = sendPackIt(packQuit, packetNum)
-            __client.close()
-            exit()
+            break
         #Send a standard message to the current channel on the server
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
             packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message)
             packetNum = sendPackIt(packMsg, packetNum)
 
+    #Connection lost to server
+    except socket.error:
+        print("Unable to send message; server connection unavailable.")
+        print("Attempting to reconnect to server..")
+
+        #Attempt reconnect to server
+        try:
+            packetNum = 0
+            __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+            __prevChannel = __curChannel
+        except ConnectionRefusedError:
+            print("Failed reconnect attempt.")
+            
+            #Allow user to exit if they cannot reconnect to the server
+            message = input("Exit client? (Y|N)")
+
+            if message.upper().__eq__("Y"):
+                print("Client exiting..")
+                exit()
+            continue
+
+        continue
+    #Client can still exit with keyboard interrupt
     except (SystemExit, KeyboardInterrupt):
-        packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
-        packetNum = sendPackIt(packQuit, packetNum)
-        time.sleep(.25)
-        __client.close()
         break
+
+#Proper way to disconnect from the server and close the client
+print("Disconnecting..")
+
+try:
+    packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+    packetNum = sendPackIt(packQuit, packetNum)
+except socket.error:
+    pass
+
+time.sleep(.25)
+__client.close()
+print("Client exiting..")
