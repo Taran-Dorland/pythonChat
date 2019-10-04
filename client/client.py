@@ -64,12 +64,12 @@ def incoming(conn):
             elif message_data.messType == 57:
                 print(message_data.message)
 
-        except EOFError:
-            print("EOF Error, Continuing..")
-            continue
         except socket.error:
             print("Server connection lost.")
             break
+        except EOFError:
+            print("EOF Error, Continuing..")
+            continue
 
 #Outputs a list of commands that the user can enter in the chat
 def listCommands():
@@ -233,7 +233,6 @@ while True:
         elif message.__eq__("/quit"):
             packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
             packetNum = sendPackIt(packQuit, packetNum)
-            __client.close()
             exit()
         #Send a standard message to the current channel on the server
         else:
