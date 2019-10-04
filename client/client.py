@@ -148,7 +148,13 @@ def connectToServer(packNum, vNum):
     PORT = json_data["PORT"]
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((HOST, PORT))
+
+    #Attempt to connect to the server
+    try:
+        client.connect((HOST, PORT))
+    except ConnectionRefusedError:
+        print("Unable to connect to the server; connection refused.")
+        exit()
 
     #Check auto-connect settings in settings.json
     auto_Connect = json_data["auto-connect"]
