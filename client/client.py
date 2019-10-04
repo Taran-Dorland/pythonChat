@@ -250,7 +250,7 @@ while True:
     except (SystemExit, KeyboardInterrupt):
         break
 
-print("Sending disconnect request..")
+print("Disconnecting..")
 packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
 packetNum = sendPackIt(packQuit, packetNum)
 time.sleep(.25)
