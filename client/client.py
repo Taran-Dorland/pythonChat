@@ -261,14 +261,14 @@ while True:
             __prevChannel = __curChannel
         except ConnectionRefusedError:
             print("Failed reconnect attempt.")
+            
+            #Allow user to exit if they cannot reconnect to the server
+            message = input("Exit client? (Y|N)")
+
+            if message.upper().__eq__("Y"):
+                print("Client exiting..")
+                exit()
             continue
-
-        #Allow user to exit if they cannot reconnect to the server
-        message = input("Exit client? (Y|N)")
-
-        if message.upper().__eq__("Y"):
-            print("Client exiting..")
-            exit()
 
         continue
     #Client can still exit with keyboard interrupt
@@ -282,7 +282,8 @@ try:
     packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
     packetNum = sendPackIt(packQuit, packetNum)
 except socket.error:
-    print("Client exiting..")
+    pass
 
+print("Client exiting..")
 time.sleep(.25)
 __client.close()
