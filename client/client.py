@@ -148,13 +148,7 @@ def connectToServer(packNum, vNum):
     PORT = json_data["PORT"]
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    #Attempt to connect to the server
-    try:
-        client.connect((HOST, PORT))
-    except ConnectionRefusedError:
-        print("Unable to connect to the server; connection refused.")
-        exit()
+    client.connect((HOST, PORT))
 
     #Check auto-connect settings in settings.json
     auto_Connect = json_data["auto-connect"]
@@ -186,7 +180,12 @@ packetNum = 0
 versionNum = json_data["Version"]
 
 global __curChannel, __prevChannel, __prevWhisper
-__client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+
+try:
+    __client, __username, __curChannel, packetNum = connectToServer(packetNum, versionNum)
+except ConnectionRefusedError:
+    print("Unable to connect to the server; connection refused.")
+
 __prevChannel = __curChannel
 
 #Client main
