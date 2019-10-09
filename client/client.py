@@ -233,7 +233,7 @@ while True:
     try:
         #https://stackoverflow.com/questions/10829650/delete-the-last-input-row-in-python
         message = input("Enter your message: ")
-        print("\033[A                             \033[A")
+        print("\033[A                                                                                                   \033[A")
 
         #Join a chat channel on the server
         if message[:5].__eq__("/join"):
@@ -258,8 +258,9 @@ while True:
             time.sleep(.25)
         #Send a private message to a user on the server
         elif message[:2].__eq__("/w"):
-            msgToSend = Fore.MAGENTA + message + Style.RESET_ALL
             msg = message.split(' ')
+            msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, msg[1], message) + Style.RESET_ALL
+            print(msgToSend)
             packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend)
             packetNum = sendPackIt(packWhisp, packetNum)
             time.sleep(.25)

@@ -141,11 +141,11 @@ def broadcastChannel(name, message, channel):
 
 #Broadcast a message to a specified user from another user (Private message)
 def broadcastPrivateMsg(name, to_name, message):
-    msg = "{0}@{1}=> {2}".format(name, to_name, message)
+    msg = Fore.MAGENTA + "{0}@{1}=> {2}".format(name, to_name, message) + Style.RESET_ALL
 
     #Check if the user actually exists
     if to_name in users:
-        print(Fore.MAGENTA + msg + Style.RESET_ALL)
+        print(msg)
         try:
             packPvtMsg = packIt(packetNum, versionNum, 15, "", name, to_name, msg)
             sendPackIt(users[to_name], packPvtMsg)
