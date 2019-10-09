@@ -1,7 +1,7 @@
 {
     "Version": 1.0,
     "IP": "localhost",
-    "PORT": 4004,
+    "PORT": 58139,
     "MAX_CONNECTIONS": 5,
     "channels": ["general", "secret"]
 }
