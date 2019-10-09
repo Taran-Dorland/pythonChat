@@ -80,37 +80,44 @@ def incoming(conn):
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
             #Server reply for list of channels
             elif message_data.messType == 12:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
             #Server reply for list of users in channel
             elif message_data.messType == 13:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
             #Server reply for list of users in server
             elif message_data.messType == 14:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
             #Private message from another user
             elif message_data.messType == 15:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
                 __prevWhisper = message_data.from_user
             #Failed to join server channel, channel does not exist
             elif message_data.messType == 55:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
             #Confirmation message for changing chat channels
             elif message_data.messType == 56:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
                 __prevChannel = __curChannel
                 __curChannel = message_data.channel
             #Failed to sent a private message to a user, user doesn't exist
@@ -118,11 +125,13 @@ def incoming(conn):
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
             #Return packet to disconnect from server
             elif message_data.messType == 99:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("")
                 conn.close()
                 break
 
