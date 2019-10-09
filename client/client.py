@@ -233,6 +233,8 @@ while True:
     try:
         #https://stackoverflow.com/questions/10829650/delete-the-last-input-row-in-python
         message = input("Enter your message: ")
+        print("\033[F")
+        print("\033[K")
         #print("\033[A\033[A")
 
         #Join a chat channel on the server
