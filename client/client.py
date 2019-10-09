@@ -1,10 +1,45 @@
+#   --------------------------------------------------------------------------------------------
+#   Client application for a basic chat application built in python3
+#   Name:           client.py
+#   Written by:     Taran Dorland
+#   Purpose:        Connects to the desired server and allows the user to send text-data
+#                   to other clients also connected to the server.
+#   Usage:          When started, attempts to connect to specified server in the settings.json
+#                   file. It then listens for user input for which data is sent to the server
+#                   to be processed and distributed appropriately.
+#   Description of
+#   parameters:     Parameters are customizable through the settings.json file in the same
+#                   directory as client.py:
+#                   ----------------------------------------------------------------------------
+#                   Version:        Sets the client version number
+#                   IP:             Sets the IP of the server to connect to
+#                   Port:           Sets the Port of the server to connect to
+#                   Auto-Connect:   Sets whether the client should auto-connect to the server
+#                                   on startup
+#                   Username:       Sets the username to auto-connect with
+#   
+#   Libraries
+#   required:       Python imports:
+#                   socket:     Used to open a socket to allow connections to other devices
+#                   threading:  Used to allow multiple threads to listen for incoming data and
+#                               send outgoing data
+#                   time:       Used to make threads wait
+#                   json:       Used to import client settings.json file
+#                   pickle:     Serializer used to pack and unpack python objects to send multiple
+#                               pieces of data together
+# 
+#                   Colorama:
+#                       Desc:   Makes ANSI escape character sequences (for producing colored terminal 
+#                               text and cursor positioning) work under MS Windows.
+#                       Link:   https://pypi.org/project/colorama/
+#   --------------------------------------------------------------------------------------------
+
 import socket
 import threading
 import time
 import json
 import pickle
 
-#https://pypi.org/project/colorama/
 from colorama import init, Fore, Back, Style
 
 #Custom object to store all data being sent and received
@@ -17,6 +52,7 @@ class packIt:
     to_user = ""
     message = ""
 
+    #Constructor
     def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message):
         self.packNum = packNum
         self.vNum = vNum
@@ -26,7 +62,7 @@ class packIt:
         self.to_user = to_user
         self.message = message
         
-#Listens for incoming data from server
+#Listens for incoming data from server (threaded)
 def incoming(conn):
 
     global __curChannel, __prevChannel, __prevWhisper
@@ -70,7 +106,7 @@ def incoming(conn):
                 break
 
         except EOFError:
-            print("EOF Error, Continuing..")
+            print("EOF Error, disconnecting..")
             conn.close()
             pass
         except socket.error:
@@ -105,6 +141,7 @@ def enterUsername(conn, packNum, vNum):
             reply = conn.recv(1024)
             reply_data = pickle.loads(reply)
 
+            #Check if username is already in use
             if reply_data.messType == 0:
                 print(Fore.RED + "Name already in use." + Style.RESET_ALL)
             else:
@@ -116,7 +153,7 @@ def enterUsername(conn, packNum, vNum):
             print("Server connection lost.")
             exit()
 
-#For auto-login
+#For auto-login if set to true in settings.json
 def autoUsername(conn, username, packNum, vNum):
     try:
         channel = ""
@@ -128,6 +165,7 @@ def autoUsername(conn, username, packNum, vNum):
         reply = conn.recv(1024)
         reply_data = pickle.loads(reply)
 
+        #Check if username is already in use, if it is switch to manual input of username at enterUsername()
         if reply_data.messType == 0:
             print(Fore.RED + "Name already in use. Switching to manual..." + Style.RESET_ALL)
             username, channel, packNum = enterUsername(conn, packNum, vNum)
@@ -164,7 +202,7 @@ def connectToServer(packNum, vNum):
 
     return client, username, channel, packNum
 
-#Send a packit to the server
+#Send a packIt object to the server
 def sendPackIt(packIt, pNum):
     packToSend = pickle.dumps(packIt)
     __client.sendall(packToSend)
@@ -175,6 +213,7 @@ def sendPackIt(packIt, pNum):
 with open('settings.json') as f:
     json_data = json.load(f)
 
+#INITIAL CLIENT SETTINGS
 #Packet info
 packetNum = 0
 versionNum = json_data["Version"]
@@ -189,7 +228,7 @@ except ConnectionRefusedError:
 
 __prevChannel = __curChannel
 
-#Client main
+#MAIN CLIENT PROCESS; LISTENING FOR USER INPUT
 while True:
     try:
         #https://stackoverflow.com/questions/10829650/delete-the-last-input-row-in-python
@@ -198,7 +237,7 @@ while True:
 
         #Join a chat channel on the server
         if message[:5].__eq__("/join"):
-            channel = message[2:]
+            channel = message[5:]
             packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel)
             packetNum = sendPackIt(packJoin, packetNum)
             time.sleep(.25)

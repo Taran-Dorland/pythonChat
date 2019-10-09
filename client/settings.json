@@ -1,7 +1,7 @@
 {
     "Version": 1.0,
     "IP": "localhost",
-    "PORT": 4004,
+    "PORT": 58139,
     "auto-connect": false,
-    "username": "thebest"
+    "username": "test-username-please-ignore"
 }
