@@ -20,6 +20,7 @@
 #   
 #   Libraries
 #   required:       Python imports:
+#                   sys:        Used for printing unique commands to clear printed lines
 #                   socket:     Used to open a socket to allow connections to other devices
 #                   threading:  Used to allow multiple threads to listen for incoming data and
 #                               send outgoing data
@@ -75,34 +76,62 @@ def incoming(conn):
             
             #Standard message from channel
             if message_data.messType == 10:
+                #Deletes the previous line so it's easier to read what was said
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
             #Server reply for list of channels
             elif message_data.messType == 12:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
             #Server reply for list of users in channel
             elif message_data.messType == 13:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
             #Server reply for list of users in server
             elif message_data.messType == 14:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
             #Private message from another user
             elif message_data.messType == 15:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
                 __prevWhisper = message_data.from_user
             #Failed to join server channel, channel does not exist
             elif message_data.messType == 55:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
             #Confirmation message for changing chat channels
             elif message_data.messType == 56:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
                 __prevChannel = __curChannel
                 __curChannel = message_data.channel
             #Failed to sent a private message to a user, user doesn't exist
             elif message_data.messType == 57:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
             #Return packet to disconnect from server
             elif message_data.messType == 99:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
                 print(message_data.message)
+                print("Enter your message: ")
                 conn.close()
                 break
 
@@ -234,9 +263,10 @@ while True:
     try:
         #https://stackoverflow.com/questions/10829650/delete-the-last-input-row-in-python
         message = input("Enter your message: ")
+
+        #Deletes the previous line so it's easier to read what was said
         sys.stdout.write("\033[F")
         sys.stdout.write("\033[K")
-        #print("\033[A\033[A")
 
         #Join a chat channel on the server
         if message[:5].__eq__("/join"):
