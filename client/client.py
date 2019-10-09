@@ -266,8 +266,8 @@ while True:
             time.sleep(.25)
         #Reply to the last user who send you a private message
         elif message[:2].__eq__("/r"):
-            msgToSend = Fore.MAGENTA + message + Style.RESET_ALL
-            msg = message.split(' ')
+            msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, __prevWhisper, message) + Style.RESET_ALL
+            print(msgToSend)
             packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend)
             packetNum = sendPackIt(packWhisp, packetNum)
             time.sleep(.25)
