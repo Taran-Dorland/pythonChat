@@ -237,7 +237,7 @@ while True:
 
         #Join a chat channel on the server
         if message[:5].__eq__("/join"):
-            channel = message[5:]
+            channel = message[6:]
             packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel)
             packetNum = sendPackIt(packJoin, packetNum)
             time.sleep(.25)
