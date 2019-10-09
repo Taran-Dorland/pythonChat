@@ -145,7 +145,7 @@ def broadcastPrivateMsg(name, to_name, message):
 
     #Check if the user actually exists
     if to_name in users:
-        print(msg)
+        print(message)
         try:
             packPvtMsg = packIt(packetNum, versionNum, 15, "", name, to_name, msg)
             sendPackIt(users[to_name], packPvtMsg)
