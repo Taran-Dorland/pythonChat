@@ -41,6 +41,8 @@ import threading
 import time
 import json
 import pickle
+#https://docs.python.org/3/library/hashlib.html
+import hashlib
 
 from colorama import init, Fore, Back, Style
 
@@ -53,9 +55,10 @@ class packIt:
     from_user = ""
     to_user = ""
     message = ""
+    checkSum = 0
 
     #Constructor
-    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message):
+    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message, checkSum):
         self.packNum = packNum
         self.vNum = vNum
         self.messType = messType
@@ -63,6 +66,7 @@ class packIt:
         self.from_user = from_user
         self.to_user = to_user
         self.message = message
+        self.checkSum = checkSum
         
 #Listens for incoming data from server (threaded)
 def incoming(conn):
@@ -126,6 +130,12 @@ def incoming(conn):
                 sys.stdout.write("\033[K")
                 print(message_data.message)
                 print("")
+            #Checksum verification failed on server; Requesting the packIt() again
+            elif message_data.messType == 90:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
+                print("Checksum verification failed on server; Must send previous packIt again.")
+                print("")
             #Return packet to disconnect from server
             elif message_data.messType == 99:
                 sys.stdout.write("\033[F")
@@ -163,7 +173,7 @@ def enterUsername(conn, packNum, vNum):
     while True:
         try:
             username = input("Enter a username: ")
-            packLogin = packIt(packNum, vNum, 25, "", username, "", username)
+            packLogin = packIt(packNum, vNum, 25, "", username, "", username, 0)
             packToSend = pickle.dumps(packLogin)
             conn.sendall(packToSend)
             packNum += 1
@@ -187,7 +197,7 @@ def enterUsername(conn, packNum, vNum):
 def autoUsername(conn, username, packNum, vNum):
     try:
         channel = ""
-        packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username)
+        packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username, 0)
         packToSend = pickle.dumps(packAutoLogin)
         conn.sendall(packToSend)
         packNum += 1
@@ -232,8 +242,18 @@ def connectToServer(packNum, vNum):
 
     return client, username, channel, packNum
 
-#Send a packIt object to the server
+#Calculates the checksum on the packIt message data and adds it to the packIt()
+#Then sends that packIt() to the server
 def sendPackIt(packIt, pNum):
+
+    #Calculate the checksum to be added to the header of the packIt()
+    try:
+        messageHash = hashlib.sha256(packIt.message).hexdigest()
+        packIt.checkSum = messageHash
+    except NameError:
+        print("Data in 'message' is not defined. Not adding CheckSum.")
+        packIt.checkSum = 0
+
     packToSend = pickle.dumps(packIt)
     __client.sendall(packToSend)
 
@@ -271,22 +291,22 @@ while True:
         #Join a chat channel on the server
         if message[:5].__eq__("/join"):
             channel = message[6:]
-            packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel)
+            packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel, 0)
             packetNum = sendPackIt(packJoin, packetNum)
             time.sleep(.25)
         #View the channels available on the server
         elif message.__eq__("/channels"):
-            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "")
+            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "", 0)
             packetNum = sendPackIt(packChan, packetNum)
             time.sleep(.25)
         #View all users in your current chat channel
         elif message.__eq__("/whochan"):
-            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "")
+            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "", 0)
             packetNum = sendPackIt(packChan, packetNum)
             time.sleep(.25)
         #View all users connected to the server
         elif message.__eq__("/who"):
-            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "")
+            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "", 0)
             packetNum = sendPackIt(packWho, packetNum)
             time.sleep(.25)
         #Send a private message to a user on the server
@@ -294,7 +314,7 @@ while True:
             msg = message.split(' ')
             msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, msg[1], message) + Style.RESET_ALL
             print(msgToSend)
-            packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend)
+            packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend, 0)
             packetNum = sendPackIt(packWhisp, packetNum)
             time.sleep(.25)
         #Reply to the last user who send you a private message
@@ -302,7 +322,7 @@ while True:
             try:
                 msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, __prevWhisper, message) + Style.RESET_ALL
                 print(msgToSend)
-                packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend)
+                packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend, 0)
                 packetNum = sendPackIt(packWhisp, packetNum)
                 time.sleep(.25)
             except NameError:
@@ -312,7 +332,7 @@ while True:
             listCommands()
         #Disconnects from the server
         elif message.__eq__("/dc"):
-            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", 0)
             packetNum = sendPackIt(packQuit, packetNum)
             __client.close()
         #Connects to the server
@@ -322,13 +342,13 @@ while True:
             __prevChannel = __curChannel
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
-            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", 0)
             packetNum = sendPackIt(packQuit, packetNum)
             break
         #Send a standard message to the current channel on the server
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
-            packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message)
+            packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message, 0)
             packetNum = sendPackIt(packMsg, packetNum)
 
     #Connection lost to server
@@ -361,7 +381,7 @@ while True:
 print("Disconnecting..")
 
 try:
-    packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "")
+    packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", 0)
     packetNum = sendPackIt(packQuit, packetNum)
 except socket.error:
     pass

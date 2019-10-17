@@ -45,6 +45,8 @@ import threading
 import time
 import json
 import pickle
+#https://docs.python.org/3/library/hashlib.html
+import hashlib
 
 from colorama import init, Fore, Back, Style
 
@@ -57,9 +59,10 @@ class packIt:
     from_user = ""
     to_user = ""
     message = ""
+    checkSum = 0
 
     #Constructor
-    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message):
+    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message, checkSum):
         self.packNum = packNum
         self.vNum = vNum
         self.messType = messType
@@ -67,10 +70,18 @@ class packIt:
         self.from_user = from_user
         self.to_user = to_user
         self.message = message
+        self.checkSum = checkSum
 
 #Send a packIt object to the given connection
 def sendPackIt(conn, packIt):
     global packetNum
+
+    try:
+        messageHash = hashlib.sha256(packIt.message).hexdigest()
+        packIt.checkSum = messageHash
+    except NameError:
+        print("Data in 'message' is not defined. Not adding CheckSum.")
+        packIt.checkSum = 0
 
     packToSend = pickle.dumps(packIt)
     conn.sendall(packToSend)
@@ -224,7 +235,7 @@ users = {}
 usersChan = {}
 channels = json_data["channels"]
 
-global packetNum
+global packetNum = 0
 packetNum = 1
 versionNum = json_data["Version"]
 
@@ -240,7 +251,7 @@ while True:
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
             if len(users) >= __MAX_CONN:
                 rejectMsg = Fore.RED + "SERVER: Connection refused. Server is full." + Style.RESET_ALL
-                packReject = packIt(packetNum, versionNum, 98, "", "SERVER", "", rejectMsg)
+                packReject = packIt(packetNum, versionNum, 98, "", "SERVER", "", rejectMsg, 0)
                 sendPackIt(conn, packReject)
                 conn.close()
             else:  
@@ -251,6 +262,19 @@ while True:
                 message = conn.recv(4096)
                 #Load pickled object; will automatically set it as a packIt() object
                 message_data = pickle.loads(message)
+
+                #CHECK DATA CHECKSUM
+                try:
+                    incomingCheckSum = message_data.checkSum
+                    comparableCheckSum = hashlib.sha256(message_data.message).hexdigest()
+
+                    if comparableCheckSum.__eq__(incomingCheckSum):
+                        print("CheckSum verification successful.")
+                    else:
+                        print("CheckSum verification failed. Requesting data again..")
+                    
+                except NameError:
+                    print("Incoming data does not have a defined CheckSum.")
 
                 print("Incoming packNum: {0}".format(message_data.packNum))
                 print("Incoming vNum: {0}".format(message_data.vNum))
@@ -273,7 +297,7 @@ while True:
                 informServer(name, "channels")
                 reply = "Channels: "
                 reply = reply + " ".join(str(e) for e in channels)
-                packReply = packIt(packetNum, versionNum, 12, "", "SERVER", name, reply)
+                packReply = packIt(packetNum, versionNum, 12, "", "SERVER", name, reply, 0)
                 sendPackIt(conn, packReply)
             #User requests a list of users in their current channel
             elif message_data.messType == 13:
@@ -284,7 +308,7 @@ while True:
                     if chanToCompare.__eq__(_chan):
                         names = names + _name + ", "
                 names = names + Style.RESET_ALL
-                packReply = packIt(packetNum, versionNum, 13, "", "SERVER", name, names)
+                packReply = packIt(packetNum, versionNum, 13, "", "SERVER", name, names, 0)
                 sendPackIt(conn, packReply)
             #User requests a list of users connected to the server
             elif message_data.messType == 14:
@@ -293,7 +317,7 @@ while True:
                 for _name, _conn in users.items():
                     names = names + _name + ", "
                 names = names + Style.RESET_ALL
-                packReply = packIt(packetNum, versionNum, 14, "", "SERVER", name, names)
+                packReply = packIt(packetNum, versionNum, 14, "", "SERVER", name, names, 0)
                 sendPackIt(conn, packReply)
             #Send a private message to another user
             elif message_data.messType == 15:
@@ -302,7 +326,7 @@ while True:
             #User disconnects from the server, delete their user data on the server
             elif message_data.messType == 99:
                 informServer(name, "disconnect")
-                packReply = packIt(packetNum, versionNum, 99, "", "SERVER", name, "Closing connection.")
+                packReply = packIt(packetNum, versionNum, 99, "", "SERVER", name, "Closing connection.", 0)
                 sendPackIt(conn, packReply)
                 del users[name]
                 del usersChan[name]
