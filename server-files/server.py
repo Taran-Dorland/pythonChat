@@ -80,7 +80,7 @@ def sendPackIt(conn, packIt):
         messageHash = hashlib.sha256(packIt.message).hexdigest()
         packIt.checkSum = messageHash
     except NameError:
-        print("Data in 'message' is not defined. Not adding CheckSum.")
+        print("Data in 'message' field is not defined. Not adding CheckSum.")
         packIt.checkSum = 0
 
     packToSend = pickle.dumps(packIt)
@@ -102,7 +102,7 @@ def accept(conn, cli_addr):
             #Check if username is already in use
             if name in users:
                 #Username already in use
-                packReply = packIt(packetNum, versionNum, 0, "", "SERVER", "", "")
+                packReply = packIt(packetNum, versionNum, 0, "", "SERVER", "", "", 0)
                 sendPackIt(conn, packReply)
             elif name:
                 conn.setblocking(False)
@@ -254,7 +254,7 @@ while True:
                 packReject = packIt(packetNum, versionNum, 98, "", "SERVER", "", rejectMsg, 0)
                 sendPackIt(conn, packReject)
                 conn.close()
-            else:  
+            else:
                 accept(conn, addr)
         #Received incoming data, parse it and decide what to do with it
         for name, conn in users.items():
@@ -269,9 +269,12 @@ while True:
                     comparableCheckSum = hashlib.sha256(message_data.message).hexdigest()
 
                     if comparableCheckSum.__eq__(incomingCheckSum):
-                        print("CheckSum verification successful.")
+                        print(Fore.GREEN + "CheckSum verification successful." + Style.RESET_ALL)
                     else:
-                        print("CheckSum verification failed. Requesting data again..")
+                        print(Fore.RED + "CheckSum verification failed. Requesting data again.." + Style.RESET_ALL)
+                        packFailed = packIt(packetNum, versionNum, 90, "", "SERVER", name, str(message_data.packNum), 0)
+                        sendPackIt(conn, packFailed)
+                        break
                     
                 except NameError:
                     print("Incoming data does not have a defined CheckSum.")

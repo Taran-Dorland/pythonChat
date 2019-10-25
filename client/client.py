@@ -136,6 +136,18 @@ def incoming(conn):
                 sys.stdout.write("\033[K")
                 print("Checksum verification failed on server; Must send previous packIt again.")
                 print("")
+
+                #Resend the correct packIt()
+                resendPackNum = int(message_data.message)
+
+                for pack in packArray:
+                    if pack.packNum == resendPackNum:
+                        packToResend = pack
+                        break
+
+                packArray.append(packToResend)
+                packetNum = sendPackIt(packToResend, packetNum)
+
             #Return packet to disconnect from server
             elif message_data.messType == 99:
                 sys.stdout.write("\033[F")
@@ -174,6 +186,7 @@ def enterUsername(conn, packNum, vNum):
         try:
             username = input("Enter a username: ")
             packLogin = packIt(packNum, vNum, 25, "", username, "", username, 0)
+            packArray.append(packLogin)
             packToSend = pickle.dumps(packLogin)
             conn.sendall(packToSend)
             packNum += 1
@@ -198,6 +211,7 @@ def autoUsername(conn, username, packNum, vNum):
     try:
         channel = ""
         packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username, 0)
+        packArray.append(packAutoLogin)
         packToSend = pickle.dumps(packAutoLogin)
         conn.sendall(packToSend)
         packNum += 1
@@ -251,7 +265,7 @@ def sendPackIt(packIt, pNum):
         messageHash = hashlib.sha256(packIt.message).hexdigest()
         packIt.checkSum = messageHash
     except NameError:
-        print("Data in 'message' is not defined. Not adding CheckSum.")
+        print("Data in 'message' field is not defined. Not adding CheckSum.")
         packIt.checkSum = 0
 
     packToSend = pickle.dumps(packIt)
@@ -266,6 +280,7 @@ with open('settings.json') as f:
 #INITIAL CLIENT SETTINGS
 #Packet info
 packetNum = 0
+packArray = []
 versionNum = json_data["Version"]
 
 global __curChannel, __prevChannel, __prevWhisper
@@ -292,21 +307,25 @@ while True:
         if message[:5].__eq__("/join"):
             channel = message[6:]
             packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel, 0)
+            packArray.append(packJoin)
             packetNum = sendPackIt(packJoin, packetNum)
             time.sleep(.25)
         #View the channels available on the server
         elif message.__eq__("/channels"):
-            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "", 0)
+            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "(CHANNELS)", 0)
+            packArray.append(packChan)
             packetNum = sendPackIt(packChan, packetNum)
             time.sleep(.25)
         #View all users in your current chat channel
         elif message.__eq__("/whochan"):
-            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "", 0)
+            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "(WHOCHAN)", 0)
+            packArray.append(packChan)
             packetNum = sendPackIt(packChan, packetNum)
             time.sleep(.25)
         #View all users connected to the server
         elif message.__eq__("/who"):
-            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "", 0)
+            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "(WHO)", 0)
+            packArray.append(packWho)
             packetNum = sendPackIt(packWho, packetNum)
             time.sleep(.25)
         #Send a private message to a user on the server
@@ -315,6 +334,7 @@ while True:
             msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, msg[1], message) + Style.RESET_ALL
             print(msgToSend)
             packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend, 0)
+            packArray.append(packWhisp)
             packetNum = sendPackIt(packWhisp, packetNum)
             time.sleep(.25)
         #Reply to the last user who send you a private message
@@ -323,6 +343,7 @@ while True:
                 msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, __prevWhisper, message) + Style.RESET_ALL
                 print(msgToSend)
                 packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend, 0)
+                packArray.append(packWhisp)
                 packetNum = sendPackIt(packWhisp, packetNum)
                 time.sleep(.25)
             except NameError:
@@ -332,7 +353,8 @@ while True:
             listCommands()
         #Disconnects from the server
         elif message.__eq__("/dc"):
-            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", 0)
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(DISCONNECT)", 0)
+            packArray.append(packQuit)
             packetNum = sendPackIt(packQuit, packetNum)
             __client.close()
         #Connects to the server
@@ -342,13 +364,15 @@ while True:
             __prevChannel = __curChannel
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
-            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", 0)
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(QUIT)", 0)
+            packArray.append(packQuit)
             packetNum = sendPackIt(packQuit, packetNum)
             break
         #Send a standard message to the current channel on the server
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
             packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message, 0)
+            packArray.append(packMsg)
             packetNum = sendPackIt(packMsg, packetNum)
 
     #Connection lost to server
