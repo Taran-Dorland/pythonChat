@@ -76,6 +76,7 @@ class packIt:
 def incoming(conn):
 
     global __curChannel, __prevChannel, __prevWhisper
+    global packetNum
 
     while True:
         try:
@@ -298,6 +299,7 @@ with open('settings.json') as f:
 
 #INITIAL CLIENT SETTINGS
 #Packet info
+global packetNum
 packetNum = 0
 packArray = []
 versionNum = json_data["Version"]
