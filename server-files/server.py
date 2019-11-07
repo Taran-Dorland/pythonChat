@@ -79,7 +79,7 @@ def sendPackIt(conn, packIt):
     global packetNum
 
     try:
-        messageHash = hashlib.sha256(packIt.message).hexdigest()
+        messageHash = hashlib.sha256(str(packIt.message).encode('utf-8')).hexdigest()
         packIt.checkSum = messageHash
     except NameError:
         print("Data in 'message' field is not defined. Not adding CheckSum.")
