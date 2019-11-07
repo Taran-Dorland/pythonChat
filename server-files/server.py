@@ -237,7 +237,8 @@ users = {}
 usersChan = {}
 channels = json_data["channels"]
 
-global packetNum = 0
+global packetNum
+packetNum = 0
 packetNum = 1
 versionNum = json_data["Version"]
 
