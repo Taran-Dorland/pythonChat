@@ -266,6 +266,7 @@ while True:
                 #Load pickled object; will automatically set it as a packIt() object
                 message_data = pickle.loads(message)
 
+                print("")
                 print("Incoming packNum: {0}".format(message_data.packNum))
                 print("Incoming vNum: {0}".format(message_data.vNum))
                 print("Incoming Type: {0}".format(message_data.messType))
