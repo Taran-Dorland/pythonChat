@@ -276,6 +276,7 @@ while True:
                 try:
                     incomingCheckSum = message_data.checkSum
                     comparableCheckSum = hashlib.sha256(str(message_data.message).encode('utf-8')).hexdigest()
+                    print("Actual checkSum: {0}".format(comparableCheckSum))
 
                     if comparableCheckSum.__eq__(incomingCheckSum):
                         print(Fore.GREEN + "CheckSum verification successful." + Style.RESET_ALL)
