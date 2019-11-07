@@ -266,6 +266,11 @@ while True:
                 #Load pickled object; will automatically set it as a packIt() object
                 message_data = pickle.loads(message)
 
+                print("Incoming packNum: {0}".format(message_data.packNum))
+                print("Incoming vNum: {0}".format(message_data.vNum))
+                print("Incoming Type: {0}".format(message_data.messType))
+                print("Incoming checkSum: {0}".format(message_data.checkSum))
+
                 #CHECK DATA CHECKSUM
                 try:
                     incomingCheckSum = message_data.checkSum
@@ -281,10 +286,6 @@ while True:
                     
                 except NameError:
                     print("Incoming data does not have a defined CheckSum.")
-
-                print("Incoming packNum: {0}".format(message_data.packNum))
-                print("Incoming vNum: {0}".format(message_data.vNum))
-                print("Incoming Type: {0}".format(message_data.messType))
 
             except EOFError:
                 continue
