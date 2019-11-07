@@ -30,7 +30,9 @@
 #                   json:       Used to import server settings.json file
 #                   pickle:     Serializer used to pack and unpack python objects to send multiple
 #                               pieces of data together
+#                   hashlib:    Used to generate a checksum hash, currently using SHA256
 # 
+#                   3rd-Party imports:
 #                   Colorama:
 #                       Desc:   Makes ANSI escape character sequences (for producing colored terminal 
 #                               text and cursor positioning) work under MS Windows.
@@ -45,6 +47,8 @@ import threading
 import time
 import json
 import pickle
+#https://docs.python.org/3/library/hashlib.html
+import hashlib
 
 from colorama import init, Fore, Back, Style
 
@@ -57,9 +61,10 @@ class packIt:
     from_user = ""
     to_user = ""
     message = ""
+    checkSum = ""
 
     #Constructor
-    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message):
+    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message, checkSum):
         self.packNum = packNum
         self.vNum = vNum
         self.messType = messType
@@ -67,10 +72,18 @@ class packIt:
         self.from_user = from_user
         self.to_user = to_user
         self.message = message
+        self.checkSum = checkSum
 
 #Send a packIt object to the given connection
 def sendPackIt(conn, packIt):
     global packetNum
+
+    try:
+        messageHash = hashlib.sha256(str(packIt.message).encode('utf-8')).hexdigest()
+        packIt.checkSum = messageHash
+    except NameError:
+        print("Data in 'message' field is not defined. Not adding CheckSum.")
+        packIt.checkSum = 0
 
     packToSend = pickle.dumps(packIt)
     conn.sendall(packToSend)
@@ -91,7 +104,7 @@ def accept(conn, cli_addr):
             #Check if username is already in use
             if name in users:
                 #Username already in use
-                packReply = packIt(packetNum, versionNum, 0, "", "SERVER", "", "")
+                packReply = packIt(packetNum, versionNum, 0, "", "SERVER", "", "Name already in use.", "")
                 sendPackIt(conn, packReply)
             elif name:
                 conn.setblocking(False)
@@ -104,7 +117,7 @@ def accept(conn, cli_addr):
                 broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0])
                 
                 replyMsg = Fore.GREEN + "You have successfully connected to the server." + Style.RESET_ALL
-                packReplyMsg = packIt(packetNum, versionNum, 10, usersChan[name], "SERVER", name, replyMsg)
+                packReplyMsg = packIt(packetNum, versionNum, 10, usersChan[name], "SERVER", name, replyMsg, "")
                 sendPackIt(conn, packReplyMsg)
                 break
     threading.Thread(target=threaded).start()
@@ -119,7 +132,7 @@ def broadcast(name, message):
             try:
                 announce = Style.BRIGHT + Fore.RED + "SE" + Fore.BLUE + "RV" + Fore.MAGENTA + "ER" + Style.RESET_ALL
                 msgToSend = "{0}: {1}".format(announce, message)
-                packMsg = packIt(packetNum, versionNum, 10, "", "SERVER", to_name, msgToSend)
+                packMsg = packIt(packetNum, versionNum, 10, "", "SERVER", to_name, msgToSend, "")
                 sendPackIt(conn, packMsg)
             except socket.error:
                 pass
@@ -134,7 +147,7 @@ def broadcastChannel(name, message, channel):
         if channel.__eq__(curr_channel):
             if user_name != name:
                 try:
-                    packMsg = packIt(packetNum, versionNum, 10, channel, name, user_name, message)
+                    packMsg = packIt(packetNum, versionNum, 10, channel, name, user_name, message, "")
                     sendPackIt(users[user_name], packMsg)
                 except socket.error:
                     pass
@@ -145,7 +158,7 @@ def broadcastPrivateMsg(name, to_name, message):
     if to_name in users:
         print(message)
         try:
-            packPvtMsg = packIt(packetNum, versionNum, 15, "", name, to_name, message)
+            packPvtMsg = packIt(packetNum, versionNum, 15, "", name, to_name, message, "")
             sendPackIt(users[to_name], packPvtMsg)
         except socket.error:
             pass
@@ -154,7 +167,7 @@ def broadcastPrivateMsg(name, to_name, message):
         print(Fore.RED + "{0} attempted to send message to {1}: Error user doesn't exist.".format(name, to_name) + Style.RESET_ALL)
         replyMsg = Fore.RED + "Error: User {0} does not exist.".format(to_name) + Style.RESET_ALL
         try:
-            packPvtMsg = packIt(packetNum, versionNum, 15, "", "SERVER", name, replyMsg)
+            packPvtMsg = packIt(packetNum, versionNum, 15, "", "SERVER", name, replyMsg, "")
             sendPackIt(users[name], packPvtMsg)
         except socket.error:
             pass
@@ -182,14 +195,14 @@ def swapChannel(name, message):
         replyMsg = Fore.GREEN + "You have successfully joined {0}.".format(usersChan[name]) + Style.RESET_ALL
 
         #User joines the specified channel
-        replyPack = packIt(packetNum, versionNum, 56, joinChannel, "SERVER", name, replyMsg)
+        replyPack = packIt(packetNum, versionNum, 56, joinChannel, "SERVER", name, replyMsg, "")
         sendPackIt(users[name], replyPack)
     else:
         #CHANNEL DOESN'T EXIST; SEND ERROR MESSAGE
         print(Fore.RED + "Unable to swap {0}'s channel; channel '{1}' does not exist.".format(name, joinChannel) + Style.RESET_ALL)
         
         replyMsg = Fore.RED + "SERVER: Unable to swap channels; channel does not exist." + Style.RESET_ALL
-        replyPack = packIt(packetNum, versionNum, 55, "", "SERVER", name, replyMsg)
+        replyPack = packIt(packetNum, versionNum, 55, "", "SERVER", name, replyMsg, "")
         sendPackIt(users[name], replyPack)
 
 #Setup the server to the specified IP and Port in settings.json
@@ -225,6 +238,7 @@ usersChan = {}
 channels = json_data["channels"]
 
 global packetNum
+packetNum = 0
 packetNum = 1
 versionNum = json_data["Version"]
 
@@ -240,10 +254,10 @@ while True:
             #ONLY ALLOW A CERTAIN NUMBER OF CONNECTIONS TO THE SERVER
             if len(users) >= __MAX_CONN:
                 rejectMsg = Fore.RED + "SERVER: Connection refused. Server is full." + Style.RESET_ALL
-                packReject = packIt(packetNum, versionNum, 98, "", "SERVER", "", rejectMsg)
+                packReject = packIt(packetNum, versionNum, 98, "", "SERVER", "", rejectMsg, "")
                 sendPackIt(conn, packReject)
                 conn.close()
-            else:  
+            else:
                 accept(conn, addr)
         #Received incoming data, parse it and decide what to do with it
         for name, conn in users.items():
@@ -252,9 +266,28 @@ while True:
                 #Load pickled object; will automatically set it as a packIt() object
                 message_data = pickle.loads(message)
 
+                print("")
                 print("Incoming packNum: {0}".format(message_data.packNum))
                 print("Incoming vNum: {0}".format(message_data.vNum))
                 print("Incoming Type: {0}".format(message_data.messType))
+                print("Incoming checkSum: {0}".format(message_data.checkSum))
+
+                #CHECK DATA CHECKSUM
+                try:
+                    incomingCheckSum = message_data.checkSum
+                    comparableCheckSum = hashlib.sha256(str(message_data.message).encode('utf-8')).hexdigest()
+                    print("Actual checkSum: {0}".format(comparableCheckSum))
+
+                    if comparableCheckSum.__eq__(incomingCheckSum):
+                        print(Fore.GREEN + "CheckSum verification successful." + Style.RESET_ALL)
+                    else:
+                        print(Fore.RED + "CheckSum verification failed. Requesting data again.." + Style.RESET_ALL)
+                        packFailed = packIt(packetNum, versionNum, 90, "", "SERVER", name, str(message_data.packNum), "")
+                        sendPackIt(conn, packFailed)
+                        break
+                    
+                except NameError:
+                    print("Incoming data does not have a defined CheckSum.")
 
             except EOFError:
                 continue
@@ -273,7 +306,7 @@ while True:
                 informServer(name, "channels")
                 reply = "Channels: "
                 reply = reply + " ".join(str(e) for e in channels)
-                packReply = packIt(packetNum, versionNum, 12, "", "SERVER", name, reply)
+                packReply = packIt(packetNum, versionNum, 12, "", "SERVER", name, reply, "")
                 sendPackIt(conn, packReply)
             #User requests a list of users in their current channel
             elif message_data.messType == 13:
@@ -284,7 +317,7 @@ while True:
                     if chanToCompare.__eq__(_chan):
                         names = names + _name + ", "
                 names = names + Style.RESET_ALL
-                packReply = packIt(packetNum, versionNum, 13, "", "SERVER", name, names)
+                packReply = packIt(packetNum, versionNum, 13, "", "SERVER", name, names, "")
                 sendPackIt(conn, packReply)
             #User requests a list of users connected to the server
             elif message_data.messType == 14:
@@ -293,7 +326,7 @@ while True:
                 for _name, _conn in users.items():
                     names = names + _name + ", "
                 names = names + Style.RESET_ALL
-                packReply = packIt(packetNum, versionNum, 14, "", "SERVER", name, names)
+                packReply = packIt(packetNum, versionNum, 14, "", "SERVER", name, names, "")
                 sendPackIt(conn, packReply)
             #Send a private message to another user
             elif message_data.messType == 15:
@@ -302,7 +335,7 @@ while True:
             #User disconnects from the server, delete their user data on the server
             elif message_data.messType == 99:
                 informServer(name, "disconnect")
-                packReply = packIt(packetNum, versionNum, 99, "", "SERVER", name, "Closing connection.")
+                packReply = packIt(packetNum, versionNum, 99, "", "SERVER", name, "Closing connection.", "")
                 sendPackIt(conn, packReply)
                 del users[name]
                 del usersChan[name]
