@@ -32,6 +32,7 @@
 #                               pieces of data together
 #                   hashlib:    Used to generate a checksum hash, currently using SHA256
 # 
+#                   3rd-Party imports:
 #                   Colorama:
 #                       Desc:   Makes ANSI escape character sequences (for producing colored terminal 
 #                               text and cursor positioning) work under MS Windows.
