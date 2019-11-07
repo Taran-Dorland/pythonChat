@@ -283,7 +283,7 @@ def sendPackIt(packIt, pNum):
     else:
         print("Sending packet with corrupted checksum.")
         try:
-            packIt.checksum = hashlib.sha256(str(packIt.message).encode('utf-8')).hexdigest() + "A1B2C3D4E5F6G7H8J9"
+            packIt.checkSum = hashlib.sha256(str(packIt.message).encode('utf-8')).hexdigest() + "A1B2C3D4E5F6G7H8J9"
         except NameError:
             print("Data in 'message' field is not defined. Failed to calculate checksum.")
             packIt.checkSum = "Undefined"
