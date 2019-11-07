@@ -28,7 +28,10 @@
 #                   json:       Used to import client settings.json file
 #                   pickle:     Serializer used to pack and unpack python objects to send multiple
 #                               pieces of data together
+#                   random:     Used to generate random numbers
+#                   hashlib:    Used to generate a checksum hash, currently using SHA256
 # 
+#                   3rd-Party imports:
 #                   Colorama:
 #                       Desc:   Makes ANSI escape character sequences (for producing colored terminal 
 #                               text and cursor positioning) work under MS Windows.
@@ -41,6 +44,7 @@ import threading
 import time
 import json
 import pickle
+import random
 #https://docs.python.org/3/library/hashlib.html
 import hashlib
 
@@ -55,7 +59,7 @@ class packIt:
     from_user = ""
     to_user = ""
     message = ""
-    checkSum = 0
+    checkSum = ""
 
     #Constructor
     def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message, checkSum):
@@ -145,6 +149,8 @@ def incoming(conn):
                         packToResend = pack
                         break
 
+                print("Resending packet with packet number: {0}".format(resendPackNum))
+
                 packArray.append(packToResend)
                 packetNum = sendPackIt(packToResend, packetNum)
 
@@ -185,7 +191,7 @@ def enterUsername(conn, packNum, vNum):
     while True:
         try:
             username = input("Enter a username: ")
-            packLogin = packIt(packNum, vNum, 25, "", username, "", username, 0)
+            packLogin = packIt(packNum, vNum, 25, "", username, "", username, "")
             packArray.append(packLogin)
             packToSend = pickle.dumps(packLogin)
             conn.sendall(packToSend)
@@ -210,7 +216,7 @@ def enterUsername(conn, packNum, vNum):
 def autoUsername(conn, username, packNum, vNum):
     try:
         channel = ""
-        packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username, 0)
+        packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username, "")
         packArray.append(packAutoLogin)
         packToSend = pickle.dumps(packAutoLogin)
         conn.sendall(packToSend)
@@ -260,13 +266,26 @@ def connectToServer(packNum, vNum):
 #Then sends that packIt() to the server
 def sendPackIt(packIt, pNum):
 
-    #Calculate the checksum to be added to the header of the packIt()
-    try:
-        messageHash = hashlib.sha256(packIt.message).hexdigest()
-        packIt.checkSum = messageHash
-    except NameError:
-        print("Data in 'message' field is not defined. Not adding CheckSum.")
-        packIt.checkSum = 0
+    #Artificial checksum corruption
+    rand = random.randint(0, 9)
+
+    #Don't corrupt checksum
+    if rand >= 1:
+        #Calculate the checksum to be added to the header of the packIt()
+        try:
+            messageHash = hashlib.sha256(packIt.message).hexdigest()
+            packIt.checkSum = messageHash
+        except NameError:
+            print("Data in 'message' field is not defined. Failed to calculate checksum.")
+            packIt.checkSum = "Undefined"
+    #Corrupt checksum
+    else:
+        print("Sending packet with corrupted checksum.")
+        try:
+            packIt.checksum = hashlib.sha256(packIt.message).hexdigest() + "A1B2C3D4E5F6G7H8J9"
+        except NameError:
+            print("Data in 'message' field is not defined. Failed to calculate checksum.")
+            packIt.checkSum = "Undefined"
 
     packToSend = pickle.dumps(packIt)
     __client.sendall(packToSend)
@@ -293,6 +312,8 @@ except ConnectionRefusedError:
 
 __prevChannel = __curChannel
 
+print("Type '/help' to view available commands.")
+
 #MAIN CLIENT PROCESS; LISTENING FOR USER INPUT
 while True:
     try:
@@ -306,25 +327,25 @@ while True:
         #Join a chat channel on the server
         if message[:5].__eq__("/join"):
             channel = message[6:]
-            packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel, 0)
+            packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel, "")
             packArray.append(packJoin)
             packetNum = sendPackIt(packJoin, packetNum)
             time.sleep(.25)
         #View the channels available on the server
         elif message.__eq__("/channels"):
-            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "(CHANNELS)", 0)
+            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "(CHANNELS)", "")
             packArray.append(packChan)
             packetNum = sendPackIt(packChan, packetNum)
             time.sleep(.25)
         #View all users in your current chat channel
         elif message.__eq__("/whochan"):
-            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "(WHOCHAN)", 0)
+            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "(WHOCHAN)", "")
             packArray.append(packChan)
             packetNum = sendPackIt(packChan, packetNum)
             time.sleep(.25)
         #View all users connected to the server
         elif message.__eq__("/who"):
-            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "(WHO)", 0)
+            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "(WHO)", "")
             packArray.append(packWho)
             packetNum = sendPackIt(packWho, packetNum)
             time.sleep(.25)
@@ -333,7 +354,7 @@ while True:
             msg = message.split(' ')
             msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, msg[1], message) + Style.RESET_ALL
             print(msgToSend)
-            packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend, 0)
+            packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend, "")
             packArray.append(packWhisp)
             packetNum = sendPackIt(packWhisp, packetNum)
             time.sleep(.25)
@@ -342,7 +363,7 @@ while True:
             try:
                 msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, __prevWhisper, message) + Style.RESET_ALL
                 print(msgToSend)
-                packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend, 0)
+                packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend, "")
                 packArray.append(packWhisp)
                 packetNum = sendPackIt(packWhisp, packetNum)
                 time.sleep(.25)
@@ -353,7 +374,7 @@ while True:
             listCommands()
         #Disconnects from the server
         elif message.__eq__("/dc"):
-            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(DISCONNECT)", 0)
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(DISCONNECT)", "")
             packArray.append(packQuit)
             packetNum = sendPackIt(packQuit, packetNum)
             __client.close()
@@ -364,14 +385,14 @@ while True:
             __prevChannel = __curChannel
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
-            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(QUIT)", 0)
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(QUIT)", "")
             packArray.append(packQuit)
             packetNum = sendPackIt(packQuit, packetNum)
             break
         #Send a standard message to the current channel on the server
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
-            packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message, 0)
+            packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message, "")
             packArray.append(packMsg)
             packetNum = sendPackIt(packMsg, packetNum)
 
@@ -405,7 +426,7 @@ while True:
 print("Disconnecting..")
 
 try:
-    packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", 0)
+    packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", "")
     packetNum = sendPackIt(packQuit, packetNum)
 except socket.error:
     pass
