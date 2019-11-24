@@ -182,6 +182,7 @@ def listCommands():
     print("/whochan\t\t:Lists current users in your channel.")
     print("/channels\t\t:Returns a list of channels on the server.")
     print("/join 'channel'\t\t:User joins the specified channel. User can only be in one channel at a time.")
+    print("/encrypt\t\t\t:Toggles encryption on outgoing messages.")
     print("/conn\t\t\t:Connects to the server.")
     print("/dc\t\t\t:Disconnects from the server.")
     print("/quit\t\t\t:Disconnects from the server and exits the program.\n")
@@ -265,7 +266,7 @@ def connectToServer(packNum, vNum):
 
 #Calculates the checksum on the packIt message data and adds it to the packIt()
 #Then sends that packIt() to the server
-def sendPackIt(packIt, pNum):
+def sendPackIt(packIt, pNum, encrypt):
 
     #Artificial checksum corruption
     rand = random.randint(0, 9)
@@ -303,6 +304,7 @@ global packetNum
 packetNum = 0
 packArray = []
 versionNum = json_data["Version"]
+encryptMessage = True
 
 global __curChannel, __prevChannel, __prevWhisper
 
@@ -331,25 +333,25 @@ while True:
             channel = message[6:]
             packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel, "")
             packArray.append(packJoin)
-            packetNum = sendPackIt(packJoin, packetNum)
+            packetNum = sendPackIt(packJoin, packetNum, encryptMessage)
             time.sleep(.25)
         #View the channels available on the server
         elif message.__eq__("/channels"):
             packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "(CHANNELS)", "")
             packArray.append(packChan)
-            packetNum = sendPackIt(packChan, packetNum)
+            packetNum = sendPackIt(packChan, packetNum, encryptMessage)
             time.sleep(.25)
         #View all users in your current chat channel
         elif message.__eq__("/whochan"):
             packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "(WHOCHAN)", "")
             packArray.append(packChan)
-            packetNum = sendPackIt(packChan, packetNum)
+            packetNum = sendPackIt(packChan, packetNum, encryptMessage)
             time.sleep(.25)
         #View all users connected to the server
         elif message.__eq__("/who"):
             packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "(WHO)", "")
             packArray.append(packWho)
-            packetNum = sendPackIt(packWho, packetNum)
+            packetNum = sendPackIt(packWho, packetNum, encryptMessage)
             time.sleep(.25)
         #Send a private message to a user on the server
         elif message[:2].__eq__("/w"):
@@ -358,7 +360,7 @@ while True:
             print(msgToSend)
             packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend, "")
             packArray.append(packWhisp)
-            packetNum = sendPackIt(packWhisp, packetNum)
+            packetNum = sendPackIt(packWhisp, packetNum, encryptMessage)
             time.sleep(.25)
         #Reply to the last user who send you a private message
         elif message[:2].__eq__("/r"):
@@ -367,18 +369,26 @@ while True:
                 print(msgToSend)
                 packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend, "")
                 packArray.append(packWhisp)
-                packetNum = sendPackIt(packWhisp, packetNum)
+                packetNum = sendPackIt(packWhisp, packetNum, encryptMessage)
                 time.sleep(.25)
             except NameError:
                 print("Error: You have not received a previous whisper from another user.")
         #Lists the available commands
         elif message.__eq__("/help"):
             listCommands()
+        #Toggles the encryption on outgoing messages
+        elif message.__eq__("/encrypt"):
+            if encryptMessage == True:
+                encryptMessage = False
+                print("Message encryption disabled.")
+            else:
+                encryptMessage = True
+                print("Message encryption enabled.")
         #Disconnects from the server
         elif message.__eq__("/dc"):
             packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(DISCONNECT)", "")
             packArray.append(packQuit)
-            packetNum = sendPackIt(packQuit, packetNum)
+            packetNum = sendPackIt(packQuit, packetNum, encryptMessage)
             __client.close()
         #Connects to the server
         elif message.__eq__("/conn"):
@@ -389,14 +399,14 @@ while True:
         elif message.__eq__("/quit"):
             packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(QUIT)", "")
             packArray.append(packQuit)
-            packetNum = sendPackIt(packQuit, packetNum)
+            packetNum = sendPackIt(packQuit, packetNum, encryptMessage)
             break
         #Send a standard message to the current channel on the server
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
             packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message, "")
             packArray.append(packMsg)
-            packetNum = sendPackIt(packMsg, packetNum)
+            packetNum = sendPackIt(packMsg, packetNum, encryptMessage)
 
     #Connection lost to server
     except socket.error:
@@ -429,7 +439,7 @@ print("Disconnecting..")
 
 try:
     packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", "")
-    packetNum = sendPackIt(packQuit, packetNum)
+    packetNum = sendPackIt(packQuit, packetNum, encryptMessage)
 except socket.error:
     pass
 
