@@ -50,6 +50,7 @@ import random
 #https://docs.python.org/3/library/hashlib.html
 import hashlib
 import codecs
+#https://docs.python.org/3/library/codecs.html
 
 from colorama import init, Fore, Back, Style
 
