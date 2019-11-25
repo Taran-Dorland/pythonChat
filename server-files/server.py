@@ -121,7 +121,7 @@ def accept(conn, cli_addr):
                 broadcastChannel(name, Fore.WHITE + Style.DIM + "{0} has joined channel.".format(name) + Style.RESET_ALL, channels[0], False)
                 
                 replyMsg = Fore.GREEN + "You have successfully connected to the server." + Style.RESET_ALL
-                packReplyMsg = packIt(packetNum, versionNum, 10, usersChan[name], "SERVER", name, replyMsg, "", True)
+                packReplyMsg = packIt(packetNum, versionNum, 10, usersChan[name], "SERVER", name, replyMsg, "", False)
                 sendPackIt(conn, packReplyMsg)
                 break
     threading.Thread(target=threaded).start()
@@ -310,7 +310,10 @@ while True:
             #User request to join a different chat channel
             elif message_data.messType == 11:
                 informServer(name, "join")
-                swapChannel(name, message_data.message)
+                if message_data.encrypted == True:
+                    swapChannel(name, snoopMessage(message_data.message))
+                else:
+                    swapChannel(name, message_data.message)
             #User requests a list of channels on the server
             elif message_data.messType == 12:
                 informServer(name, "channels")
