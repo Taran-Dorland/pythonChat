@@ -98,7 +98,7 @@ def incoming(conn):
                 #Deletes the previous line so it's easier to read what was said
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
-                print("{0}@{1}: {2}".format(message_data.name, message_data.channel, message_data.message))
+                print("{0}@{1}: {2}".format(message_data.from_user, message_data.channel, message_data.message))
                 print("")
             #Server reply for list of channels
             elif message_data.messType == 12:
