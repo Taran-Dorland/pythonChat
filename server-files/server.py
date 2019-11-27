@@ -31,6 +31,8 @@
 #                   pickle:     Serializer used to pack and unpack python objects to send multiple
 #                               pieces of data together
 #                   hashlib:    Used to generate a checksum hash, currently using SHA256
+#                   codecs:     Used to transform the contents of the message being sent
+#                               in ROT-13
 # 
 #                   3rd-Party imports:
 #                   Colorama:
@@ -354,7 +356,7 @@ while True:
                 sendPackIt(conn, packReply)
                 del users[name]
                 del usersChan[name]
-                broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL, message_data.encrypted)
+                broadcast(name, Fore.RED + Style.DIM + "{0} has disconnected.".format(name) + Style.RESET_ALL, False)
                 break
 
         time.sleep(.1)
