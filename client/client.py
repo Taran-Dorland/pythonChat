@@ -30,6 +30,8 @@
 #                               pieces of data together
 #                   random:     Used to generate random numbers
 #                   hashlib:    Used to generate a checksum hash, currently using SHA256
+#                   codecs:     Used to transform the contents of the message being sent
+#                               in ROT-13
 # 
 #                   3rd-Party imports:
 #                   Colorama:
@@ -47,6 +49,8 @@ import pickle
 import random
 #https://docs.python.org/3/library/hashlib.html
 import hashlib
+import codecs
+#https://docs.python.org/3/library/codecs.html
 
 from colorama import init, Fore, Back, Style
 
@@ -60,9 +64,10 @@ class packIt:
     to_user = ""
     message = ""
     checkSum = ""
+    encrypted = True
 
     #Constructor
-    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message, checkSum):
+    def __init__(self, packNum, vNum, messType, channel, from_user, to_user, message, checkSum, encrypted):
         self.packNum = packNum
         self.vNum = vNum
         self.messType = messType
@@ -71,6 +76,7 @@ class packIt:
         self.to_user = to_user
         self.message = message
         self.checkSum = checkSum
+        self.encrypted = encrypted
         
 #Listens for incoming data from server (threaded)
 def incoming(conn):
@@ -82,13 +88,17 @@ def incoming(conn):
         try:
             message = conn.recv(4096)
             message_data = pickle.loads(message)
+
+            #Decrypt incoming message if it is encrypted
+            if message_data.encrypted == True:
+                message_data.message = codecs.decode(message_data.message, "rot-13")
             
             #Standard message from channel
             if message_data.messType == 10:
                 #Deletes the previous line so it's easier to read what was said
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
-                print(message_data.message)
+                print("{0}@{1}: {2}".format(message_data.from_user, message_data.channel, message_data.message))
                 print("")
             #Server reply for list of channels
             elif message_data.messType == 12:
@@ -153,7 +163,7 @@ def incoming(conn):
                 print("Resending packet with packet number: {0}".format(resendPackNum))
 
                 packArray.append(packToResend)
-                packetNum = sendPackIt(packToResend, packetNum)
+                packetNum = sendPackIt(packToResend, packetNum, False)
 
             #Return packet to disconnect from server
             elif message_data.messType == 99:
@@ -182,6 +192,7 @@ def listCommands():
     print("/whochan\t\t:Lists current users in your channel.")
     print("/channels\t\t:Returns a list of channels on the server.")
     print("/join 'channel'\t\t:User joins the specified channel. User can only be in one channel at a time.")
+    print("/encrypt\t\t\t:Toggles encryption on outgoing messages.")
     print("/conn\t\t\t:Connects to the server.")
     print("/dc\t\t\t:Disconnects from the server.")
     print("/quit\t\t\t:Disconnects from the server and exits the program.\n")
@@ -192,7 +203,7 @@ def enterUsername(conn, packNum, vNum):
     while True:
         try:
             username = input("Enter a username: ")
-            packLogin = packIt(packNum, vNum, 25, "", username, "", username, "")
+            packLogin = packIt(packNum, vNum, 25, "", username, "", username, "", False)
             packArray.append(packLogin)
             packToSend = pickle.dumps(packLogin)
             conn.sendall(packToSend)
@@ -217,7 +228,7 @@ def enterUsername(conn, packNum, vNum):
 def autoUsername(conn, username, packNum, vNum):
     try:
         channel = ""
-        packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username, "")
+        packAutoLogin = packIt(packNum, vNum, 25, "", username, "", username, "", False)
         packArray.append(packAutoLogin)
         packToSend = pickle.dumps(packAutoLogin)
         conn.sendall(packToSend)
@@ -265,7 +276,11 @@ def connectToServer(packNum, vNum):
 
 #Calculates the checksum on the packIt message data and adds it to the packIt()
 #Then sends that packIt() to the server
-def sendPackIt(packIt, pNum):
+def sendPackIt(packIt, pNum, encrypt):
+
+    #Encrypt the message contents if toggled on
+    if encrypt == True:
+        packIt.message = codecs.encode(packIt.message, "rot-13")
 
     #Artificial checksum corruption
     rand = random.randint(0, 9)
@@ -303,6 +318,7 @@ global packetNum
 packetNum = 0
 packArray = []
 versionNum = json_data["Version"]
+encryptMessage = True
 
 global __curChannel, __prevChannel, __prevWhisper
 
@@ -329,56 +345,64 @@ while True:
         #Join a chat channel on the server
         if message[:5].__eq__("/join"):
             channel = message[6:]
-            packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel, "")
+            packJoin = packIt(packetNum, versionNum, 11, __curChannel, __username, "", channel, "", encryptMessage)
             packArray.append(packJoin)
-            packetNum = sendPackIt(packJoin, packetNum)
+            packetNum = sendPackIt(packJoin, packetNum, encryptMessage)
             time.sleep(.25)
         #View the channels available on the server
         elif message.__eq__("/channels"):
-            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "(CHANNELS)", "")
+            packChan = packIt(packetNum, versionNum, 12, __curChannel, __username, "", "(CHANNELS)", "", encryptMessage)
             packArray.append(packChan)
-            packetNum = sendPackIt(packChan, packetNum)
+            packetNum = sendPackIt(packChan, packetNum, encryptMessage)
             time.sleep(.25)
         #View all users in your current chat channel
         elif message.__eq__("/whochan"):
-            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "(WHOCHAN)", "")
+            packChan = packIt(packetNum, versionNum, 13, __curChannel, __username, "", "(WHOCHAN)", "", encryptMessage)
             packArray.append(packChan)
-            packetNum = sendPackIt(packChan, packetNum)
+            packetNum = sendPackIt(packChan, packetNum, encryptMessage)
             time.sleep(.25)
         #View all users connected to the server
         elif message.__eq__("/who"):
-            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "(WHO)", "")
+            packWho = packIt(packetNum, versionNum, 14, __curChannel, __username, "", "(WHO)", "", encryptMessage)
             packArray.append(packWho)
-            packetNum = sendPackIt(packWho, packetNum)
+            packetNum = sendPackIt(packWho, packetNum, encryptMessage)
             time.sleep(.25)
         #Send a private message to a user on the server
         elif message[:2].__eq__("/w"):
             msg = message.split(' ')
             msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, msg[1], message) + Style.RESET_ALL
             print(msgToSend)
-            packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend, "")
+            packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, msg[1], msgToSend, "", encryptMessage)
             packArray.append(packWhisp)
-            packetNum = sendPackIt(packWhisp, packetNum)
+            packetNum = sendPackIt(packWhisp, packetNum, encryptMessage)
             time.sleep(.25)
         #Reply to the last user who send you a private message
         elif message[:2].__eq__("/r"):
             try:
                 msgToSend = Fore.MAGENTA + "{0}@{1}=> {2}".format(__username, __prevWhisper, message) + Style.RESET_ALL
                 print(msgToSend)
-                packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend, "")
+                packWhisp = packIt(packetNum, versionNum, 15, __curChannel, __username, __prevWhisper, msgToSend, "", encryptMessage)
                 packArray.append(packWhisp)
-                packetNum = sendPackIt(packWhisp, packetNum)
+                packetNum = sendPackIt(packWhisp, packetNum, encryptMessage)
                 time.sleep(.25)
             except NameError:
                 print("Error: You have not received a previous whisper from another user.")
         #Lists the available commands
         elif message.__eq__("/help"):
             listCommands()
+        #Toggles the encryption on outgoing messages
+        elif message.__eq__("/encrypt"):
+            if encryptMessage == True:
+                encryptMessage = False
+                print("Message encryption disabled.")
+            else:
+                encryptMessage = True
+                print("Message encryption enabled.")
         #Disconnects from the server
         elif message.__eq__("/dc"):
-            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(DISCONNECT)", "")
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(DISCONNECT)", "", encryptMessage)
             packArray.append(packQuit)
-            packetNum = sendPackIt(packQuit, packetNum)
+            packetNum = sendPackIt(packQuit, packetNum, encryptMessage)
             __client.close()
         #Connects to the server
         elif message.__eq__("/conn"):
@@ -387,16 +411,16 @@ while True:
             __prevChannel = __curChannel
         #Disconnect from the server, exit the client
         elif message.__eq__("/quit"):
-            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(QUIT)", "")
+            packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "(QUIT)", "", encryptMessage)
             packArray.append(packQuit)
-            packetNum = sendPackIt(packQuit, packetNum)
+            packetNum = sendPackIt(packQuit, packetNum, encryptMessage)
             break
         #Send a standard message to the current channel on the server
         else:
             print("{0}@{1}: {2}".format(__username, __curChannel, message))
-            packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message, "")
+            packMsg = packIt(packetNum, versionNum, 10, __curChannel, __username, "", message, "", encryptMessage)
             packArray.append(packMsg)
-            packetNum = sendPackIt(packMsg, packetNum)
+            packetNum = sendPackIt(packMsg, packetNum, encryptMessage)
 
     #Connection lost to server
     except socket.error:
@@ -428,8 +452,8 @@ while True:
 print("Disconnecting..")
 
 try:
-    packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", "")
-    packetNum = sendPackIt(packQuit, packetNum)
+    packQuit = packIt(packetNum, versionNum, 99, "", __username, "SERVER", "", "", encryptMessage)
+    packetNum = sendPackIt(packQuit, packetNum, encryptMessage)
 except socket.error:
     pass
 
