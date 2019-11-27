@@ -1,5 +1,5 @@
 {
-    "Version": 1.1,
+    "Version": 3.0,
     "IP": "localhost",
     "PORT": 58139,
     "auto-connect": false,

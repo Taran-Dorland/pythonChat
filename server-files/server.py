@@ -144,7 +144,7 @@ def broadcast(name, message, encrypted):
 #Broadcasts a message to a specific channel
 def broadcastChannel(name, message, channel, encrypted):
 
-    print(message + "(Channel: {0})".format(channel))
+    print("{0}: {1}".format(name, message) + "(Channel: {0})".format(channel))
 
     #Sends the message to everyone in the specified channel except the user who sent it
     for user_name, curr_channel in usersChan.items():
@@ -304,7 +304,7 @@ while True:
 
             #Standard broadcast message to all in user's channel
             if message_data.messType == 10:
-                broadcastChannel(name, "{0}@{1}: {2}".format(name, usersChan[name], message_data.message), usersChan[name], message_data.encrypted)
+                broadcastChannel(name, message_data.message, usersChan[name], message_data.encrypted)
                 if message_data.encrypted == True:
                     print("(DECRYPTED){0}@{1}: {2}".format(name, usersChan[name], snoopMessage(message_data.message)))
             #User request to join a different chat channel

@@ -98,7 +98,7 @@ def incoming(conn):
                 #Deletes the previous line so it's easier to read what was said
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
-                print(message_data.message)
+                print("{0}@{1}: {2}".format(message_data.name, message_data.channel, message_data.message))
                 print("")
             #Server reply for list of channels
             elif message_data.messType == 12:
@@ -122,7 +122,7 @@ def incoming(conn):
             elif message_data.messType == 15:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
-                print(message_data.message)
+                print()
                 print("")
                 __prevWhisper = message_data.from_user
             #Failed to join server channel, channel does not exist
@@ -163,7 +163,7 @@ def incoming(conn):
                 print("Resending packet with packet number: {0}".format(resendPackNum))
 
                 packArray.append(packToResend)
-                packetNum = sendPackIt(packToResend, packetNum, packToResend.encrypted)
+                packetNum = sendPackIt(packToResend, packetNum, False)
 
             #Return packet to disconnect from server
             elif message_data.messType == 99:
