@@ -122,7 +122,7 @@ def incoming(conn):
             elif message_data.messType == 15:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
-                print()
+                print(message_data.message)
                 print("")
                 __prevWhisper = message_data.from_user
             #Failed to join server channel, channel does not exist
