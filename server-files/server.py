@@ -44,6 +44,11 @@
 #                   changes and additions also updated from Python2 to Python3
 #   --------------------------------------------------------------------------------------------
 
+#Version 3.0 Changes:
+# - class packIt has a added parameter (encrypted (bool)) which shows whether the message contents are encrypted or not
+# - def snoopMessage returns the decrypted message
+# - Updated outgoing class packIt's to handle new encrypted parameter
+
 import socket
 import threading
 import time
