@@ -40,6 +40,13 @@
 #                       Link:   https://pypi.org/project/colorama/
 #   --------------------------------------------------------------------------------------------
 
+#Version 3.0 Changes:
+# - def incoming handles incoming message decryption
+# - def sendPackIt handles outgoing message encryption
+# - Main process handles the toggling between outgoing message encryption
+# - class packIt has a added parameter (encrypted (bool)) which shows whether the message contents are encrypted or not
+# - New /encrypt command available to toggle whether outgoing messages should be encrypted or not
+
 import sys
 import socket
 import threading
